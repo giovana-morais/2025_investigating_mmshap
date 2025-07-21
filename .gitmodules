@@ -1,0 +1,3 @@
+[submodule "Qwen-Audio"]
+	path = Qwen-Audio
+	url = https://github.com/QwenLM/Qwen-Audio
