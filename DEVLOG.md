@@ -5,8 +5,6 @@ general:
 - [ ] create scripts to create fs, qo, and desc json files
 - [ ] add requirements.txt for reproduction
 - [ ] replace argparse for hydra
-- [ ] try to use library shap instead of version from mm-shap (what is the
-  difference anyway?)
 - [ ] create tests for data scripts
 
 qwen audio:
@@ -22,6 +20,9 @@ qwen audio:
 - [ ] write some sanity check tests for this. we need to ensure that the
   processed audio is the masked one!
 
-mmshap calculation:
+mmshap/shapley values calculation:
 - [x] separate basic functions in a `mmshap.py` module or something similar
 - [ ] add tests to the  `compute_mm_score` function
+- [ ] save shapley values in both experiments
+- [ ] try to use library shap instead of version from mm-shap (what is the
+  difference anyway?)
