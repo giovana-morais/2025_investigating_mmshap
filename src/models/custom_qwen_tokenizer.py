@@ -1,11 +1,14 @@
+import numpy as np
 import torch
 
-class CustomQwenTokenizer(QwenTokenizer):
+from models.Qwen_Audio.tokenization_qwen import QWenTokenizer
+from models.Qwen_Audio.audio import *
+
+class CustomQwenTokenizer(QWenTokenizer):
     def process_audio_no_url(self, audio):
         """
-        Extension of `process_audio`. process one audio at a time and the
+        Extension of `process_audio`, but process one audio at a time and the
         input is the actual waveform instead of the audio url.
-
         """
         if np.prod(audio.shape) > 0:
             audios, audio_lens, audio_span_tokens = [], [], []
@@ -80,9 +83,11 @@ class CustomQwenTokenizer(QwenTokenizer):
         tokens = input_ids.clone().detach().squeeze(0)
         end_audio = torch.where(tokens == special_tokens["</audio>"])[0][0]
         im_end = torch.where(tokens == special_tokens["<|im_end|>"])[0][-1]
-        # here we use end_audio+1 to avoid including the tag itself
-        # [end_audio+1:im_end] should not include the last tag by default
-        text_tokens = tokens[end_audio+1:im_end]
+        # here we use end_audio+1 to avoid including the </audio> tag itself
+        start_idx = end_audio+1
+        # [end_audio+1:im_end] should not include the last tag <im_end> by default
+        end_idx = im_end
+        text_tokens = tokens[start_idx:end_idx]
         n_text_tokens = len(text_tokens)
 
-        return text_tokens, n_text_tokens, (end_audio+1, im_end)
+        return text_tokens, n_text_tokens, (start_idx, end_idx)
