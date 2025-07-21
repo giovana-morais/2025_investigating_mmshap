@@ -1,0 +1,2 @@
+qwenaudio:
+  vocab_file: "src/models/Qwen_Audio/qwen.tiktoken"

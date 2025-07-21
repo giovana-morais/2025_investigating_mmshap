@@ -18,13 +18,8 @@ def fs_answer_distribution(questions):
 def randomize_answer(question):
     options = ["A", "B", "C", "D"]
     new_option = random.choice(options)
-    # print("question")
     new_question = question.replace(" The correct answer is: A",
     f" The correct answer is: {new_option}")
-
-#     print("===========")
-#     print(new_question)
-#     input("")
 
     return new_question
 
@@ -33,7 +28,7 @@ if __name__ == "__main__":
     with open("muchomusic_eval/example_file.json", "r") as f:
         questions = json.load(f)
 
-    fs_answer_dist= fs_answer_distribution(questions)
+    fs_answer_dist = fs_answer_distribution(questions)
     print(fs_answer_dist)
 
     all_options = []
