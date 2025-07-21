@@ -13,6 +13,7 @@ qwen audio:
 - [x] (when possible) use qwenaudio functions instead of copying and pasting things
 - [ ] rewrite `tokenizer.process_audio` to provide the actual waveform instead of the audio path
 	- this way we avoid temporary files and the code will be much cleaner
+	- should i edit this to receive multiple audios?
 
 mmshap calculation:
 - [x] separate basic functions in a `mmshap.py` module or something similar
