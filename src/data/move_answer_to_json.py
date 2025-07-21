@@ -1,6 +1,7 @@
 """
 given a txt with answers, move it to the input json
 """
+
 import json
 import sys
 
@@ -25,7 +26,6 @@ if __name__ == "__main__":
         model_answer["model_output"] = a
         # print(model_answer["prompt"])
         output_json.append(model_answer)
-
 
     with open(f"experiments/output_data/{filename}.json", "w") as f:
         json.dump(output_json, f)

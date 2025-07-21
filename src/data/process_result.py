@@ -4,8 +4,10 @@ calculate result for llama experiments
 IMPORTANT!!!!
 this currently does not work for qwenaudio (i'm still implementing the parsing)
 """
+
 import json
 import sys
+
 
 def letter_to_index(model_output):
     """
@@ -14,6 +16,7 @@ def letter_to_index(model_output):
     letter_options = ["A", "B", "C", "D"]
 
     return letter_options.index(model_output)
+
 
 def compare_answers(model_output, answer_order):
     ground_truth = answer_order.index(0)
@@ -39,4 +42,4 @@ if __name__ == "__main__":
             total_correct += 1
 
     print(f"Total questions {total_questions}")
-    print(f"Total correct {total_correct} ({total_correct/total_questions:.2%})")
+    print(f"Total correct {total_correct} ({total_correct / total_questions:.2%})")

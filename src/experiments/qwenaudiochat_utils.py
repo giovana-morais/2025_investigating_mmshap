@@ -6,16 +6,17 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.generation import GenerationConfig
 
+
 def compute_tokens(
     model,
     tokenizer,
     query,
     history,
-    system = "You are a helpful assistant",
-    append_history = None,
-    stop_words_ids = None,
+    system="You are a helpful assistant",
+    append_history=None,
+    stop_words_ids=None,
     **kwargs,
-) :
+):
     """
     based on `chat` function of the Qwen-Audio repo. adapted so i can get the
     tokens.
@@ -31,9 +32,9 @@ def compute_tokens(
     if stop_words_ids is None:
         stop_words_ids = []
 
-    max_window_size = kwargs.get('max_window_size', None)
+    max_window_size = kwargs.get("max_window_size", None)
     if max_window_size is None:
-        max_window_size = 6144 # stolen from chat_generation_config.json
+        max_window_size = 6144  # stolen from chat_generation_config.json
 
     raw_text, context_tokens, audio_info = qgu.make_context(
         tokenizer,
@@ -44,8 +45,7 @@ def compute_tokens(
         chat_format=generation_config.chat_format,
     )
 
-    stop_words_ids.extend(
-            [[tokenizer.im_end_id], [tokenizer.im_start_id]])
+    stop_words_ids.extend([[tokenizer.im_end_id], [tokenizer.im_start_id]])
 
     input_ids = torch.tensor([context_tokens]).to(model.device)
 

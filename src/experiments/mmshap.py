@@ -15,7 +15,6 @@ def compute_mm_score(audio_length, shap_values, method="avg", verbose=False):
         text_score = text_contrib / (text_contrib + audio_contrib)
         audio_score = audio_contrib / (text_contrib + audio_contrib)
 
-
     if verbose:
         print("compute_mm_score")
         print("audio contribution", audio_contrib)

@@ -4,6 +4,7 @@ import torch
 from models.Qwen_Audio.tokenization_qwen import QWenTokenizer
 from models.Qwen_Audio.audio import *
 
+
 class CustomQwenTokenizer(QWenTokenizer):
     def process_audio_no_url(self, audio):
         """
@@ -13,7 +14,9 @@ class CustomQwenTokenizer(QWenTokenizer):
         if np.prod(audio.shape) > 0:
             audios, audio_lens, audio_span_tokens = [], [], []
 
-            L = (audio.shape[0] if audio.shape[0] <= 480000 else 480000)  # max_length < 30s
+            L = (
+                audio.shape[0] if audio.shape[0] <= 480000 else 480000
+            )  # max_length < 30s
             mel_len = L // 160
             audio = pad_or_trim(audio.flatten())
             mel = log_mel_spectrogram(audio)
@@ -26,12 +29,14 @@ class CustomQwenTokenizer(QWenTokenizer):
             input_audio_lengths = torch.IntTensor(audio_lens)
             input_audios = torch.stack(audios, dim=0)
 
-            return {"input_audios": input_audios,
-                    "input_audio_lengths": input_audio_lengths,
-                    "audio_span_tokens": audio_span_tokens,
-                    # FIXME: now we leave this url as none, but we might want to
-                    # receive this as an argument afterwards
-                    "audio_urls": None}
+            return {
+                "input_audios": input_audios,
+                "input_audio_lengths": input_audio_lengths,
+                "audio_span_tokens": audio_span_tokens,
+                # FIXME: now we leave this url as none, but we might want to
+                # receive this as an argument afterwards
+                "audio_urls": None,
+            }
         else:
             return None
 
@@ -84,7 +89,7 @@ class CustomQwenTokenizer(QWenTokenizer):
         end_audio = torch.where(tokens == special_tokens["</audio>"])[0][0]
         im_end = torch.where(tokens == special_tokens["<|im_end|>"])[0][-1]
         # here we use end_audio+1 to avoid including the </audio> tag itself
-        start_idx = end_audio+1
+        start_idx = end_audio + 1
         # [end_audio+1:im_end] should not include the last tag <im_end> by default
         end_idx = im_end
         text_tokens = tokens[start_idx:end_idx]

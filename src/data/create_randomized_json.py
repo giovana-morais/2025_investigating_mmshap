@@ -2,6 +2,7 @@
 the original muchomusic sample question answer is always A. this script
 creates a new version that randomizes the answer.
 """
+
 import json
 import random
 from collections import Counter
@@ -18,8 +19,9 @@ def fs_answer_distribution(questions):
 def randomize_answer(question):
     options = ["A", "B", "C", "D"]
     new_option = random.choice(options)
-    new_question = question.replace(" The correct answer is: A",
-    f" The correct answer is: {new_option}")
+    new_question = question.replace(
+        " The correct answer is: A", f" The correct answer is: {new_option}"
+    )
 
     return new_question
 

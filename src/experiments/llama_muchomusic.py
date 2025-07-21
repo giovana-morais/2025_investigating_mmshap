@@ -1,6 +1,7 @@
 """
 Llama3 inference on MuChoMusic
 """
+
 import argparse
 import json
 import multiprocessing
@@ -12,16 +13,19 @@ import torch
 
 
 def model_inference(pipeline, tokenizer, question):
-    messages =  [
-        {"role": "system", "content": "You will receive multiple choice questions and your answer should be only the letter of the correct choice."},
+    messages = [
+        {
+            "role": "system",
+            "content": "You will receive multiple choice questions and your answer should be only the letter of the correct choice.",
+        },
         {"role": "user", "content": question["prompt"]},
     ]
 
     output = pipeline(
-            messages,
-            eos_token_id=tokenizer.eos_token_id,
-            pad_token_id=tokenizer.eos_token_id,
-            max_new_tokens=1,
+        messages,
+        eos_token_id=tokenizer.eos_token_id,
+        pad_token_id=tokenizer.eos_token_id,
+        max_new_tokens=1,
     )
     answer = output[0]["generated_text"][-1]["content"]
     return answer
@@ -30,14 +34,12 @@ def model_inference(pipeline, tokenizer, question):
 def create_pipeline(model_id, tokenizer):
     bnb_config = transformers.BitsAndBytesConfig(
         load_in_4bit=True,
-        bnb_4bit_quant_type='nf4',
+        bnb_4bit_quant_type="nf4",
         bnb_4bit_use_double_quant=True,
-        bnb_4bit_compute_dtype=torch.bfloat16
+        bnb_4bit_compute_dtype=torch.bfloat16,
     )
     model = transformers.AutoModelForCausalLM.from_pretrained(
-        model_id,
-        quantization_config=bnb_config,
-        device_map="auto"
+        model_id, quantization_config=bnb_config, device_map="auto"
     )
 
     pipeline = transformers.pipeline(
@@ -47,25 +49,26 @@ def create_pipeline(model_id, tokenizer):
     )
     return pipeline
 
+
 def parse_arguments():
     # Create the parser
     parser = argparse.ArgumentParser(description="Parse experiment settings.")
 
     # Define the arguments
     parser.add_argument(
-        '--input',
+        "--input",
         type=str,
-        choices=['original', 'random'],
+        choices=["original", "random"],
         required=True,
-        help="Choose the type of experiment: 'original' or 'random'."
+        help="Choose the type of experiment: 'original' or 'random'.",
     )
     parser.add_argument(
-        '--environment',
+        "--environment",
         type=str,
-        choices=['local', 'hpc'],
+        choices=["local", "hpc"],
         default="hpc",
         required=False,
-        help="Choose the environment: 'local' or 'hpc'."
+        help="Choose the environment: 'local' or 'hpc'.",
     )
 
     # Parse the arguments
