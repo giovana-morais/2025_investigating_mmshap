@@ -11,58 +11,49 @@ from src.models.custom_qwen_tokenizer import CustomQwenTokenizer
 from src.models.Qwen_Audio.audio import *
 
 
-# Fixture for the tokenizer
-@pytest.fixture
-def tokenizer():
-    with open("config.yml", "r") as f:
-        config = yaml.safe_load(f)
-    tokenizer = CustomQwenTokenizer(config["qwenaudio"]["vocab_file"]).from_pretrained(
-        "Qwen/Qwen-Audio-Chat", trust_remote_code=True
-    )
-    return tokenizer
+def test_empty_audio(tokenizer):
+    """Test case A: Empty audio should return None"""
+    empty_audio = np.array([])
+    result = tokenizer.process_audio_no_url(empty_audio)
+    assert result is None
 
 
-# # Test cases
-# def test_empty_audio(tokenizer):
-#     """Test case A: Empty audio should return None"""
-#     empty_audio = np.array([])
-#     result = tokenizer.process_audio_no_url(empty_audio)
-#     assert result is None
+def test_mono_audio(tokenizer):
+    """Test case B: Mono audio (1 channel)"""
+    # Create mono audio (shape: [samples])
+    mono_audio = torch.rand(16000)  # 1 second of audio at 16kHz
+    result = tokenizer.process_audio_no_url(mono_audio)
 
-# def test_mono_audio(tokenizer):
-#     """Test case B: Mono audio (1 channel)"""
-#     # Create mono audio (shape: [samples])
-#     mono_audio = torch.rand(16000)  # 1 second of audio at 16kHz
-#     result = tokenizer.process_audio_no_url(mono_audio)
+    assert isinstance(result, dict)
+    assert "input_audios" in result
+    assert "input_audio_lengths" in result
+    assert "audio_span_tokens" in result
+    assert "audio_urls" in result
 
-#     assert isinstance(result, dict)
-#     assert "input_audios" in result
-#     assert "input_audio_lengths" in result
-#     assert "audio_span_tokens" in result
-#     assert "audio_urls" in result
+    # Check tensor shapes
+    # assert result["input_audios"].shape == (1, 80, 100)  # (batch, n_mels, time)
+    assert result["input_audio_lengths"].shape == (1, 2)  # (batch, [audio_len, token_num])
 
-#     # Check tensor shapes
-#     # assert result["input_audios"].shape == (1, 80, 100)  # (batch, n_mels, time)
-#     assert result["input_audio_lengths"].shape == (1, 2)  # (batch, [audio_len, token_num])
 
-# def test_stereo_audio(tokenizer):
-#     """Test case C: Stereo audio (2 channels)"""
-#     # Create stereo audio (shape: [2, samples])
-#     stereo_audio = torch.rand(2, 48000)  # 2 channels, 3 seconds at 16kHz
-#     result = tokenizer.process_audio_no_url(stereo_audio)
+def test_stereo_audio(tokenizer):
+    """Test case C: Stereo audio (2 channels)"""
+    # Create stereo audio (shape: [2, samples])
+    stereo_audio = torch.rand(2, 48000)  # 2 channels, 3 seconds at 16kHz
+    result = tokenizer.process_audio_no_url(stereo_audio)
 
-#     assert isinstance(result, dict)
-#     # Should flatten stereo to mono, so same checks as mono apply
-#     # assert result["input_audios"].shape == (1, 80, 300)  # Longer audio
-#     assert result["input_audio_lengths"].shape == (1, 2)
+    assert isinstance(result, dict)
+    # Should flatten stereo to mono, so same checks as mono apply
+    # assert result["input_audios"].shape == (1, 80, 300)  # Longer audio
+    assert result["input_audio_lengths"].shape == (1, 2)
 
-# def test_audio_too_long(tokenizer):
-#     """Test audio longer than 30s gets truncated"""
-#     long_audio = torch.rand(480001)  # 30s + 1 sample
-#     result = tokenizer.process_audio_no_url(long_audio)
 
-#     # Should be truncated to 480000 samples
-#     assert result["input_audios"].shape[2] == 3000  # 480000 / 160 = 3000
+def test_audio_too_long(tokenizer):
+    """Test audio longer than 30s gets truncated"""
+    long_audio = torch.rand(480001)  # 30s + 1 sample
+    result = tokenizer.process_audio_no_url(long_audio)
+
+    # Should be truncated to 480000 samples
+    assert result["input_audios"].shape[2] == 3000  # 480000 / 160 = 3000
 
 
 def test_basic_question_extraction(tokenizer):
@@ -135,8 +126,7 @@ def test_empty_question(tokenizer):
     """Test case where there are no tokens between </audio> and <|im_end|>"""
 
     audio_url = "<audio>tests/audio.wav</audio>"
-    text = f"""<|im_start|>system
-Instructions<|im_end|>
+    text = f"""<|im_start|>system Instructions<|im_end|>
 <|im_start|>user
 {audio_url}
 <|im_start|>assistant"""

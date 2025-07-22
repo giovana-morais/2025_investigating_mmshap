@@ -1,2 +1,3 @@
 qwenaudio:
   vocab_file: "src/models/Qwen_Audio/qwen.tiktoken"
+  chat_config: "src/models/Qwen_Audio/chat_generation_config.json"
