@@ -8,6 +8,8 @@ Source code for the paper "Measuring Modality Contribution in Music Understandin
 ---
 
 ### Dependencies
+Cloning the repo and its submodules
+git submodule add https://github.com/QwenLM/Qwen-Audio --name Qwen_Audio
 
 ### Installing
 Install the module via `pip`

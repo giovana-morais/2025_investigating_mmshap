@@ -29,9 +29,6 @@ def test_chat_method_with_decoded_response(model, tokenizer):
         decode_response=True
     )
 
-    print(outputs)
-    print(response)
-
         # --- Assert ---
         # mock_model.generate.assert_called_once()
         # assert torch.equal(outputs, torch.tensor([[2, 2, 3, 6, 7]]))

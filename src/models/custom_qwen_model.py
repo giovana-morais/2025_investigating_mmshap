@@ -3,12 +3,15 @@ import torch
 from models.Qwen_Audio.modeling_qwen import *
 
 class CustomQwenModel(QWenLMHeadModel):
+    def __init__(self, config):
+        super().__init__(config)
+
     # overwriting the chat method to return `outputs`
     def chat(
         self,
         tokenizer: PreTrainedTokenizer,
         query: str,
-        history: Optional[HistoryType],
+        history: Optional[HistoryType] = None,
         system: str = "You are a helpful assistant.",
         append_history: bool = True,
         stop_words_ids: Optional[List[List[int]]] = None,
