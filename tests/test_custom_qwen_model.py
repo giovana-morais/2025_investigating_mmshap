@@ -4,30 +4,27 @@ import numpy as np
 
 from src.models.custom_qwen_model import CustomQwenModel
 
-# --- Tests for CustomQwen ---
+# --- Tests for CustomQwenModel ---
 def test_chat_method_with_decoded_response(model, tokenizer):
     """
-    Tests the CustomQwen.chat method when `decode_response` is True.
+    Tests the CustomQwenModel.chat method when `decode_response` is True.
     """
-    # --- Arrange ---
-    # We use `patch` as a context manager, which is common in pytest
-    # with patch('custom_qwen.make_context') as mock_make_context, \
-    #      patch('custom_qwen.get_stop_words_ids') as mock_get_stop_words, \
-    #      patch('custom_qwen.decode_tokens') as mock_decode:
-
-    #     # Configure mocks
-    #     mock_make_context.return_value = ("raw_text", [1, 2, 3], "audio_info")
-    #     mock_get_stop_words.return_value = [[4], [5]]
-    #     mock_model.generate.return_value = torch.tensor([[1, 2, 3, 6, 7]])
-    #     mock_decode.return_value = "This is a decoded response."
-    #     mock_tokenizer = MagicMock() # Mock tokenizer for this specific test
-
     # --- Act ---
     print("calling chat")
-    outputs, response, history = CustomQwen.chat(
+
+    audio_url = "<audio>tests/audio.wav</audio>"
+    query = f"""<|im_start|>System
+	Instructions<|im_end|>
+	<|im_start|>user
+    {audio_url}
+	Question: What is 2+2?
+	Options: (A) 1 (B) 2 (C) 3 (D) 4<|im_end|>
+	<|im_start|>assistant"""
+
+    outputs, response, history = CustomQwenModel.chat(
         model,
         tokenizer,
-        query="Hello",
+        query=query,
         history=[],
         decode_response=True
     )
@@ -44,7 +41,7 @@ def test_chat_method_with_decoded_response(model, tokenizer):
 
 # def test_chat_method_without_decoded_response(mock_model):
 #     """
-#     Tests the CustomQwen.chat method when `decode_response` is False.
+#     Tests the CustomQwenModel.chat method when `decode_response` is False.
 #     """
 #     # --- Arrange ---
 #     with patch('custom_qwen.make_context') as mock_make_context, \
@@ -56,7 +53,7 @@ def test_chat_method_with_decoded_response(model, tokenizer):
 #         mock_tokenizer = MagicMock()
 
 #         # --- Act ---
-#         outputs, response, history = CustomQwen.chat(
+#         outputs, response, history = CustomQwenModel.chat(
 #             mock_model,
 #             mock_tokenizer,
 #             query="Hello",

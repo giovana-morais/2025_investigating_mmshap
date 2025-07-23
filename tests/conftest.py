@@ -28,6 +28,4 @@ def model():
             trust_remote_code=True
             ).eval()
 
-    model.device = "cpu"
-
     return model
