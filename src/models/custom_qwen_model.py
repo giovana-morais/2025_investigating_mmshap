@@ -5,6 +5,7 @@ from models.Qwen_Audio.modeling_qwen import *
 class CustomQwenModel(QWenLMHeadModel):
     def __init__(self, config):
         super().__init__(config)
+        print("SEARCH ORDER:\n",self.__mro__)
 
     # overwriting the chat method to return `outputs`
     def chat(
@@ -34,6 +35,7 @@ class CustomQwenModel(QWenLMHeadModel):
         max_window_size = kwargs.get('max_window_size', None)
         if max_window_size is None:
             max_window_size = generation_config.max_window_size
+
         raw_text, context_tokens, audio_info = make_context(
             tokenizer,
             query,
@@ -49,7 +51,8 @@ class CustomQwenModel(QWenLMHeadModel):
         input_ids = torch.tensor([context_tokens]).to(self.device)
         kwargs['audio_info'] = audio_info
 
-        outputs = self.generate(
+        print("CustomQwen super().generate")
+        outputs = super().generate(
                     input_ids,
                     stop_words_ids=stop_words_ids,
                     return_dict_in_generate=True,
