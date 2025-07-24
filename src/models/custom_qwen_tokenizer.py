@@ -6,18 +6,20 @@ from models.Qwen_Audio.audio import *
 
 
 class CustomQwenTokenizer(QWenTokenizer):
-    def process_audio_no_url(self, audio):
+    def process_audio_no_url(self, audio, audio_url):
         """
         Extension of `process_audio`, but process one audio at a time and the
         input is the actual waveform instead of the audio url.
         """
+        audio_urls = self.extract_audio_urls(audio_url)
         if np.prod(audio.shape) > 0:
             audios, audio_lens, audio_span_tokens = [], [], []
 
-            L = (
-                audio.shape[0] if audio.shape[0] <= 480000 else 480000
-            )  # max_length < 30s
+            L = (audio.shape[0] if audio.shape[0] <= 480000 else 480000)  # max_length < 30s
             mel_len = L // 160
+            # i am not sure i agree with this flatten (why are we concatenating
+            # the channels to process the information?) but i won't change it to
+            # keep consistency
             audio = pad_or_trim(audio.flatten())
             mel = log_mel_spectrogram(audio)
             audio_len_after_cnn = get_T_after_cnn(mel_len)
@@ -26,6 +28,7 @@ class CustomQwenTokenizer(QWenTokenizer):
             audios.append(mel)
             audio_lens.append(audio_len)
             audio_span_tokens.append(audio_token_num + 2)  # add audio bos eos
+
             input_audio_lengths = torch.IntTensor(audio_lens)
             input_audios = torch.stack(audios, dim=0)
 
@@ -35,7 +38,7 @@ class CustomQwenTokenizer(QWenTokenizer):
                 "audio_span_tokens": audio_span_tokens,
                 # FIXME: now we leave this url as none, but we might want to
                 # receive this as an argument afterwards
-                "audio_urls": None,
+                "audio_urls": audio_urls,
             }
         else:
             return None

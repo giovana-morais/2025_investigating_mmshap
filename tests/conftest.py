@@ -10,6 +10,12 @@ def tokenizer():
     with open("config.yml", "r") as f:
         config = yaml.safe_load(f)
 
+    vocab_file = config["qwenaudio"]["vocab_file"]
+    custom_tokenizer = CustomQwenTokenizer(vocab_file).from_pretrained(
+        "Qwen/Qwen-Audio-Chat", trust_remote_code=True
+    )
+
+    return custom_tokenizer
 
 def model():
     with open("config.yml", "r") as f:
