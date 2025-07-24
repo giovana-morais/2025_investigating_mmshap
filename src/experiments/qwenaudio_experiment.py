@@ -2,33 +2,39 @@
 runs MM-SHAP for QwenAudio
 
 example usage
-    python experiments/qwenaudiochat_mmshap.py --input=original --environment=hpc --prompt_type=zero_shot --system_instruction=default
+    # run for all
+    python experiments/qwenaudiochat_mmshap.py \
+            --input_path=data/input_data/muchomusic_original_fs.json \
+            --output_path=data/output_data/qwenaudio_original_fs.json
+
+    # run for first 10 q&a pairs
+    python experiments/qwenaudiochat_mmshap.py \
+            --input_path=data/input_data/muchomusic_original_fs.json \
+            --output_path=data/output_data/qwenaudio_original_fs.json \
+            --index=0 \
+            --range=50
 """
 
 import argparse
 import json
-import math
 import os
-import tempfile
 import time
 
 import numpy as np
+import shap
 import torch
 import torchaudio
 import torchaudio.functional as F
 import yaml
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from transformers.generation import GenerationConfig
+from transformers import AutoModelForCausalLM
 # torch.manual_seed(1234)
 
-import shap
-from models.custom_qwen_tokenizer import CustomQwenTokenizer
-import models.Qwen_Audio.qwen_generation_utils as qwen_gen_utils
-from models.Qwen_Audio.audio import *
-from qwenaudiochat_utils import *
 from mmshap import compute_mm_score
+from models.custom_qwen_tokenizer import CustomQwenTokenizer
+from models.Qwen_Audio.audio import load_audio, SAMPLE_RATE
+from utils import *
+import models.Qwen_Audio.qwen_generation_utils as qwen_gen_utils
 
-SAMPLE_RATE = 16000  # from QwenAudio/audio.py
 
 def compute_tokens(
     model,
@@ -41,8 +47,8 @@ def compute_tokens(
     **kwargs,
 ):
     """
-    based on `chat` function of the Qwen-Audio repo. adapted so i can get the
-    tokens.
+    Based on `QWenLMHeadModel.chat` function of the Qwen-Audio repo. Tokenizes
+    the question and returns the necessary tokens for the output generation.
     """
     generation_config = model.generation_config
 
@@ -76,10 +82,9 @@ def compute_tokens(
 
 
 def explain_ALM(question, audio_url, model, tokenizer, args):
-    ### internal functions
     def token_masker(mask, x):
         """
-        receives only valid tokens to mask. we don't do anything about audio
+        Receives only valid tokens to mask. We don't do anything about audio
         tokens yet.
         """
         masked_X = x.clone().detach()
@@ -99,6 +104,7 @@ def explain_ALM(question, audio_url, model, tokenizer, args):
         masked_X[~text_mask] = 0
 
         return masked_X.to("cpu")
+
 
     def get_prediction(x):
         nonlocal input_ids
@@ -120,21 +126,20 @@ def explain_ALM(question, audio_url, model, tokenizer, args):
         result = np.zeros((masked_text_tokens.shape[0], output_ids.shape[1]))
 
         for i in range(masked_text_tokens.shape[0]):
+            # replace the question tokens for the masked ones, keep everything else
             iteration_input_id = masked_input_ids.clone().detach().to("cuda:0")
-            # replace the text tokens for the masked ones, keep everything else
             iteration_input_id[:, interval[0] : interval[1]] = masked_text_tokens[i, :]
 
+            # zero the audio patches
             masked_audio = audio.clone().detach()
-            # zero the audio patches (audio is already resampled)
             to_mask = torch.where(masked_audio_token_ids[i] == 0)[0]
             for k in to_mask:
                 masked_audio[k * SAMPLE_RATE : (k + 1) * SAMPLE_RATE] = 0
 
             masked_audio_info = tokenizer.process_audio_no_url(masked_audio, audio_url)
-
             kwargs["audio_info"] = masked_audio_info
 
-            # generate answer with masked audio and masked input
+            # generate answer with masked inputs
             outputs = model.generate(
                 iteration_input_id,
                 stop_words_ids=stop_words_ids,
@@ -149,11 +154,10 @@ def explain_ALM(question, audio_url, model, tokenizer, args):
             output_ids = output_ids.to("cpu")
 
             result[i] = logits[0, output_ids]
-            break
 
         return result
 
-    ### main logic
+    ### ==== Calculate baseline (outputs without any masking) ====
     query = tokenizer.from_list_format(
         [
             {"audio": audio_url},
@@ -163,15 +167,13 @@ def explain_ALM(question, audio_url, model, tokenizer, args):
 
     system_instruction = "You are a helpful assistant."
 
-    # get input ids
+    # get input_ids
     input_ids, stop_words_ids, audio_info, raw_text, context_tokens = compute_tokens(
         model, tokenizer, query=query, system=system_instruction, history=None
     )
-
-    # print("raw_text", raw_text)
     kwargs["audio_info"] = audio_info
 
-    # generate
+    # generate output_tokens
     outputs = model.generate(
         input_ids,
         stop_words_ids=stop_words_ids,
@@ -179,6 +181,7 @@ def explain_ALM(question, audio_url, model, tokenizer, args):
         **kwargs,
     )
 
+    # decode tokens and generate string response
     response = qwen_gen_utils.decode_tokens(
         outputs[0],
         tokenizer,
@@ -201,102 +204,39 @@ def explain_ALM(question, audio_url, model, tokenizer, args):
     audio = load_audio(audio_url, sr=SAMPLE_RATE)
     audio = torch.from_numpy(audio)
 
-    # give the audio chunks negative token ids to distinguish them
-    # from text tokens
+    # audio windows have negative token_ids to distinguish them from text tokens
     audio_token_ids = torch.tensor(range(-1, -(n_text_tokens+1), -1)).unsqueeze(0)
     audio_token_ids = audio_token_ids.to("cuda:0")
     print(f"number of text tokens: {n_text_tokens}")
     print(f"number of audio tokens: {audio_token_ids.shape}")
 
-    # concatenate everything
+    # concatenate text and audio tokens
     X = torch.cat((audio_token_ids, text_tokens), 1).unsqueeze(1)
     X.to("cpu")
 
     explainer = shap.Explainer(get_prediction, token_masker, silent=True, max_evals=600)
     shap_values = explainer(X)
     print("shap_values.shape", shap_values.shape)
-    print("shap_values.values.shape", shap_values.values.shape)
-    print("shap_values", shap_values.values)
-    print("audio_length", audio_token_ids.shape[1])
-    # print("audio shap values", shap_values[0,0, :audio_length, :].sum())
 
     # TODO: change this afterwards to receive the track id
-    np.save(f"{args.prompt_type}_shapley_values.npy", shap_values.values)
-    np.save(f"{args.prompt_type}_base_values.npy", shap_values.base_values)
-    np.save(f"{args.prompt_type}_tokens", X.cpu().numpy())
-    audio_score, text_score = compute_mm_score(audio_token_ids.shape[1], shap_values, verbose=True)
-
-    mm_score = audio_score
+    # np.save(f"{args.prompt_type}_shapley_values.npy", shap_values.values)
+    # np.save(f"{args.prompt_type}_base_values.npy", shap_values.base_values)
+    # np.save(f"{args.prompt_type}_tokens", X)
+    mm_score = compute_mm_score(audio_token_ids.shape[1], shap_values,
+            verbose=True)
 
     return response, mm_score
 
 
-def parse_arguments():
-    # Create the parser
-    parser = argparse.ArgumentParser(description="Parse experiment settings.")
-
-    # Define the arguments
-    parser.add_argument(
-        "--input",
-        type=str,
-        choices=["original", "random", "qual_analysis"],
-        default="original",
-        required=False,
-        help="Choose the type of experiment: 'original' or 'random'.",
-    )
-    parser.add_argument(
-        "--environment",
-        type=str,
-        choices=["local", "hpc"],
-        required=False,
-        default="hpc",
-        help="Choose the environment: 'local' or 'hpc'.",
-    )
-    parser.add_argument(
-        "--prompt_type",
-        type=str,
-        # choices=["zero_shot", "few_shot", "description", "description_zero_shot"],
-        default="few_shot",
-        required=False,
-        help="Use the example question or not.",
-    )
-
-    parser.add_argument(
-        "--system_instruction",
-        type=str,
-        choices=["default", "detailed"],
-        required=False,
-        default="default",
-        help="Use QwenAudio default system instruction or not",
-    )
-
-    parser.add_argument("--range", type=int, required=False, default=None)
-
-    parser.add_argument("--index", type=int, required=False, default=None)
-
-    parser.add_argument("--output_path", type=str, required=False, default=None)
-
-    args = parser.parse_args()
-
-    return args
-
-
 if __name__ == "__main__":
-    args = parse_arguments()
+    args = utils.parse_arguments()
 
     if args.environment == "hpc":
         data_path = "/scratch/gv2167/datasets"
     else:
         data_path = "/media/gigibs/DD02EEEC68459F17/datasets"
 
-    if args.input == "original":
-        questions_path = "/scratch/gv2167/ismir2025/ismir2025_exploration/experiments/input_data/muchomusic_original.json"
-    elif args.input == "random":
-        questions_path = "/scratch/gv2167/ismir2025/ismir2025_exploration/experiments/input_data/muchomusic_random.json"
-    elif args.input == "qual_analysis":
-        questions_path = "/scratch/gv2167/ismir2025/ismir2025_exploration/experiments/input_data/extreme_example.json"
-
-    with open(questions_path, "r") as f:
+    with open(args.input_path, "r") as f:
         questions = json.load(f)
 
     if args.range is not None:
@@ -310,7 +250,6 @@ if __name__ == "__main__":
     if args.output_path is not None:
         output_path = args.output_path
 
-    # use cuda device
     model = AutoModelForCausalLM.from_pretrained(
         "Qwen/Qwen-Audio-Chat",
         device_map="cuda",
@@ -324,22 +263,13 @@ if __name__ == "__main__":
     tokenizer = CustomQwenTokenizer(vocab_file).from_pretrained(
         "Qwen/Qwen-Audio-Chat", trust_remote_code=True
     )
-
     tokenizer.padding_side = "left"
     tokenizer.pad_token_id = tokenizer.eod_id
 
     special_tokens = {
-        "<audio>": tokenizer.special_tokens["<audio>"],
-        "</audio>": tokenizer.special_tokens["</audio>"],
-        "<|choice|>": tokenizer.special_tokens["<|choice|>"],
-        "<|answer|>": tokenizer.special_tokens["<|answer|>"],
-        "<|startofanalysis|>": tokenizer.special_tokens["<|startofanalysis|>"],
-        "<|en|>": tokenizer.special_tokens["<|en|>"],
-        "<|question|>": tokenizer.special_tokens["<|question|>"],
-        "<|endoftext|>": tokenizer.special_tokens["<|endoftext|>"],
-        "<|im_start|>": tokenizer.special_tokens["<|im_start|>"],
-        "<|im_end|>": tokenizer.special_tokens["<|im_end|>"],
-        "<audio_padding>": 151851,
+        "</audio>": tokenizer.convert_tokens_to_ids("</audio>"),
+        "<|im_end|>": tokenizer.convert_tokens_to_ids("<|im_end|>"),
+        "<audio_padding>": tokenizer.convert_tokens_to_ids("<audio_padding>"),
     }
 
     start = time.time()
@@ -350,22 +280,6 @@ if __name__ == "__main__":
 
         audio_url = os.path.join(data_path, "/".join(q["audio_path"].split("/")[1:]))
         question = q["prompt"]
-
-        if args.prompt_type == "zero_shot":
-            question = "Question:" + question.split("Question:")[-1]
-        elif args.prompt_type == "description":
-            question = "Please describe the song."
-        elif args.prompt_type == "description_zero_shot":
-            preamble = (
-                "Please describe the following audio and then answer the question. "
-            )
-            question = preamble + "Question:" + question.split("Question:")[-1]
-        elif args.prompt_type == "single_question":
-            question = "What is the capital of Egypt?"
-        elif args.prompt_type == "single_question_mc":
-            question = "What is the capital of Egypt?\n(A) Montevideo\n(B) Tokyo\n(C) Cairo\n(D) London"
-        elif args.prompt_type == "question_only":
-            question = question.split("Question:")[-1].split("\n")[0]
 
         # try:
         response, question_mm_score = explain_ALM(
