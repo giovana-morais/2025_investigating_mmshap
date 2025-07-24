@@ -2,7 +2,7 @@ general:
 - [x] organize folder (what should be the right structure for my case?)
 	- slurm jobs, bash scripts, python scripts, notebooks, figures and the
 	  models we need to run
-- [ ] create scripts to create fs, qo, and desc json files
+- [x] create scripts to create fs, qo, and desc json files
 - [ ] add requirements.txt for reproduction
 - [ ] replace argparse for hydra
 - [ ] create tests for data scripts
