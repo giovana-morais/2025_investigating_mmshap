@@ -82,6 +82,18 @@ def compute_tokens(
 
 
 def explain_ALM(question, audio_url, model, tokenizer, args):
+    """
+    Parameters
+    ---
+        question : string
+        audio_url : string
+        model : model
+        tokenizer : tokenizer
+        args : parsed args
+
+    Returns
+    ---
+    """
     def token_masker(mask, x):
         """
         Receives only valid tokens to mask. We don't do anything about audio
