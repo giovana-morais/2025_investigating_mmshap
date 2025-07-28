@@ -22,7 +22,6 @@ $base_path/sing << EOF
 python \
 	$base_path/src/experiments/qwenaudio_experiment.py \
 	--input_path=$input_path	\
-	--output_path=$output_path 	\
 	--model=$model 			\
 	--environment=$environment 	\
 	--range=$range 			\

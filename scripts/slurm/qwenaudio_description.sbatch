@@ -16,13 +16,11 @@ system_instruction="default"
 range=1
 index=$SLURM_ARRAY_TASK_ID
 input_path="${base_path}/data/input_data/muchomusic_musiccaps_desc.json"
-output_path="${base_path}/data/output_data/qwenaudio_${prompt_type}_${range}_${index}.json"
 
 $base_path/sing << EOF
 python \
 	$base_path/src/experiments/qwenaudio_experiment.py \
 	--input_path=$input_path	\
-	--output_path=$output_path 	\
 	--environment=$environment 	\
 	--range=$range 			\
 	--index=$index			\

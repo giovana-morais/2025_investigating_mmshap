@@ -26,7 +26,6 @@ import yaml
 from transformers import AutoModelForCausalLM
 # torch.manual_seed(1234)
 
-from mmshap import compute_mm_score
 from models.custom_qwen_tokenizer import CustomQwenTokenizer
 from models.Qwen_Audio.audio import load_audio, SAMPLE_RATE
 from utils import *

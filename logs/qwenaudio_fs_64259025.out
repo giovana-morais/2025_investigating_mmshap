@@ -1,0 +1,11 @@
+Detected gpus, using --nv:
+Tesla V100-PCIE-32GB
+
+
+hello :) your python: /ext3/miniconda3/envs/py310/bin/python
+Python 3.10.18
+usage: qwenaudio_experiment.py [-h] --input_path INPUT_PATH
+                               [--environment {local,hpc}] --model
+                               {qwenaudio,mullama} [--range RANGE]
+                               [--index INDEX]
+qwenaudio_experiment.py: error: unrecognized arguments: --output_path=
