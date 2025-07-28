@@ -15,7 +15,7 @@ qwen audio:
 	- this was done by creating a custom tokenizer that inherits from
 	  qwen tokenizer and add two new methods to it
 - [x] add requirements for qwen
-- [ ] refactor qwenaudio experiment to use process_audio_no_url instead of
+- [x] refactor qwenaudio experiment to use process_audio_no_url instead of
   process_audio
 - [ ] write some sanity check tests for this. we need to ensure that the
   processed audio is the masked one!
@@ -23,6 +23,6 @@ qwen audio:
 mmshap/shapley values calculation:
 - [x] separate basic functions in a `mmshap.py` module or something similar
 - [ ] add tests to the  `compute_mm_score` function
-- [ ] save shapley values in both experiments
-- [ ] try to use library shap instead of version from mm-shap (what is the
+- [x] save shapley values in both experiments
+- [x] try to use library shap instead of version from mm-shap (what is the
   difference anyway?)
