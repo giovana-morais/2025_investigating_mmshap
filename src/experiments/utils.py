@@ -20,8 +20,12 @@ def parse_arguments():
         help="Choose the environment: 'local' or 'hpc'.",
     )
 
-    parser.add_argument("--output_path", type=str, required=False, default=None,
-            help="Output path to results")
+    parser.add_argument(
+            "--model",
+            type=str,
+            choices=["qwenaudio", "mullama"],
+            required=True
+            )
 
     parser.add_argument("--range", type=int, required=False, default=None,
             help="Parallelization parameter. Specifies how many questions we cover per run. If not provided, we process the full json file.")

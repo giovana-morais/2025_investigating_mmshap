@@ -4,13 +4,11 @@ runs MM-SHAP for QwenAudio
 example usage
     # run for all
     python experiments/qwenaudiochat_mmshap.py \
-            --input_path=data/input_data/muchomusic_original_fs.json \
-            --output_path=data/output_data/qwenaudio_original_fs.json
+            --input_path=data/input_data/muchomusic_original_fs.json
 
     # run for first 10 q&a pairs
     python experiments/qwenaudiochat_mmshap.py \
             --input_path=data/input_data/muchomusic_original_fs.json \
-            --output_path=data/output_data/qwenaudio_original_fs.json \
             --index=0 \
             --range=50
 """
@@ -239,14 +237,11 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
             os.path.join(entry["output_folder"], f"{entry['question_id']}_tokens"),
             X)
 
-    mm_score = compute_mm_score(audio_token_ids.shape[1], shap_values,
-            verbose=True)
-
-    return response, mm_score
+    return response
 
 
 if __name__ == "__main__":
-    args = utils.parse_arguments()
+    args = parse_arguments()
 
     if args.environment == "hpc":
         dataset_path = "/scratch/gv2167/datasets"
@@ -263,9 +258,6 @@ if __name__ == "__main__":
         )
     else:
         print(f"processing {len(questions)} questions")
-
-    if args.output_path is not None:
-        output_path = args.output_path
 
     with open("config.yml", "r") as f:
         config = yaml.safe_load(f)
@@ -293,33 +285,30 @@ if __name__ == "__main__":
 
 
     start = time.time()
-    mm_scores = []
 
-    experiment_type = os.path.basename(args.input_file).replace("json", "")
-    print("experiment type": experiment_type)
+    experiment_type = f"{args.model}_{os.path.basename(args.input_path).replace('.json', '')}"
+    print("experiment type", experiment_type)
 
     for entry in questions:
         kwargs = {}
 
-        audio_url = os.path.join(dataset_path, "/".join(q["audio_path"].split("/")[1:]))
-        output_folder = os.path.join("data/output_data", experiment_type, entry["question_id"])
+        audio_url = os.path.join(dataset_path, "/".join(entry["audio_path"].split("/")[1:]))
+        output_folder = os.path.join("data/output_data", experiment_type, str(entry["question_id"]))
         entry["output_folder"] = output_folder
         os.makedirs(output_folder, exist_ok=True)
 
         try:
-            response, question_mm_score = explain_ALM(
+            response = explain_ALM(
                 entry, audio_url, model, tokenizer, args
             )
-            mm_scores.append(question_mm_score)
             entry["model_output"] = response
-            entry["mmshap_text"] = question_mm_score
+
+            with open(entry_folder + ".json", "w") as f:
+                json.dump(entry, f)
+
+
         except Exception as e:
             print(f"could not process song {entry['audio_path']}. reason: {e}")
 
     end = time.time()
     print(f"execution for {len(questions)}: {(end - start) / 60} minutes")
-    mm_scores = np.asarray(mm_scores)
-    print(f"avg text score for the dataset: {mm_scores.mean()}")
-
-    with open(output_path, "w") as f:
-        json.dump(questions, f)
