@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -c 2
 #SBATCH --mem 64GB
-#SBATCH --time=8:00:00
+#SBATCH --time=4:00:00
 #SBATCH --gres gpu:1
 #SBATCH --job-name=qwenaudio_desc_%j
 #SBATCH --output logs/qwenaudio_desc_%j.out
