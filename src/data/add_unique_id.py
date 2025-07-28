@@ -2,14 +2,13 @@
 Create a new field in the muchomusic original .csv to differentiate between
 different questions with the same track id
 """
+
 import argparse
 import json
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description="Create unique id column"
-    )
+    parser = argparse.ArgumentParser(description="Create unique id column")
     parser.add_argument(
         "--input_path",
         type=str,
@@ -24,6 +23,7 @@ def parse_arguments():
     )
 
     return parser.parse_args()
+
 
 if __name__ == "__main__":
     args = parse_arguments()

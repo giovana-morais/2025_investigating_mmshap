@@ -5,6 +5,7 @@ Create filtered version of MuChoMusic with MusicCaps questions only
 import argparse
 import json
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description="Create filtered version of MuChoMusic with MusicCaps questions only"
