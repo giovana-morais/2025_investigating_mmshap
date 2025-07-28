@@ -80,11 +80,11 @@ def compute_tokens(
     return input_ids, stop_words_ids, audio_info, raw_text, context_tokens
 
 
-def explain_ALM(question, audio_url, model, tokenizer, args):
+def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
     """
     Parameters
     ---
-        question : string
+        entry : dict
         audio_url : string
         model : model
         tokenizer : tokenizer
@@ -172,7 +172,7 @@ def explain_ALM(question, audio_url, model, tokenizer, args):
     query = tokenizer.from_list_format(
         [
             {"audio": audio_url},
-            {"text": question},
+            {"text": entry["prompt"]},
         ]
     )
 
@@ -229,10 +229,16 @@ def explain_ALM(question, audio_url, model, tokenizer, args):
     shap_values = explainer(X)
     print("shap_values.shape", shap_values.shape)
 
-    # TODO: change this afterwards to receive the track id
-    # np.save(f"{args.prompt_type}_shapley_values.npy", shap_values.values)
-    # np.save(f"{args.prompt_type}_base_values.npy", shap_values.base_values)
-    # np.save(f"{args.prompt_type}_tokens", X)
+    np.save(
+            os.path.join(entry["output_folder"], f"{entry['question_id']}_shapley_values.npy"),
+            shap_values.values)
+    np.save(
+            os.path.join(entry["output_folder"], f"{entry['question_id']}_base_values.npy"),
+            shap_values.base_values)
+    np.save(
+            os.path.join(entry["output_folder"], f"{entry['question_id']}_tokens"),
+            X)
+
     mm_score = compute_mm_score(audio_token_ids.shape[1], shap_values,
             verbose=True)
 
@@ -243,9 +249,9 @@ if __name__ == "__main__":
     args = utils.parse_arguments()
 
     if args.environment == "hpc":
-        data_path = "/scratch/gv2167/datasets"
+        dataset_path = "/scratch/gv2167/datasets"
     else:
-        data_path = "/media/gigibs/DD02EEEC68459F17/datasets"
+        dataset_path = "/media/gigibs/DD02EEEC68459F17/datasets"
 
     with open(args.input_path, "r") as f:
         questions = json.load(f)
@@ -261,15 +267,10 @@ if __name__ == "__main__":
     if args.output_path is not None:
         output_path = args.output_path
 
-    model = AutoModelForCausalLM.from_pretrained(
-        "Qwen/Qwen-Audio-Chat",
-        device_map="cuda",
-        trust_remote_code=True,
-    ).eval()
-
     with open("config.yml", "r") as f:
         config = yaml.safe_load(f)
 
+    # setup tokenizer
     vocab_file = config["qwenaudio"]["vocab_file"]
     tokenizer = CustomQwenTokenizer(vocab_file).from_pretrained(
         "Qwen/Qwen-Audio-Chat", trust_remote_code=True
@@ -283,24 +284,37 @@ if __name__ == "__main__":
         "<audio_padding>": tokenizer.convert_tokens_to_ids("<audio_padding>"),
     }
 
+    # setup model
+    model = AutoModelForCausalLM.from_pretrained(
+        "Qwen/Qwen-Audio-Chat",
+        device_map="cuda",
+        trust_remote_code=True,
+    ).eval()
+
+
     start = time.time()
     mm_scores = []
 
-    for q in questions:
+    experiment_type = os.path.basename(args.input_file).replace("json", "")
+    print("experiment type": experiment_type)
+
+    for entry in questions:
         kwargs = {}
 
-        audio_url = os.path.join(data_path, "/".join(q["audio_path"].split("/")[1:]))
-        question = q["prompt"]
+        audio_url = os.path.join(dataset_path, "/".join(q["audio_path"].split("/")[1:]))
+        output_folder = os.path.join("data/output_data", experiment_type, entry["question_id"])
+        entry["output_folder"] = output_folder
+        os.makedirs(output_folder, exist_ok=True)
 
         try:
             response, question_mm_score = explain_ALM(
-                question, audio_url, model, tokenizer, args
+                entry, audio_url, model, tokenizer, args
             )
             mm_scores.append(question_mm_score)
-            q["model_output"] = response
-            q["mmshap_text"] = question_mm_score
+            entry["model_output"] = response
+            entry["mmshap_text"] = question_mm_score
         except Exception as e:
-            print(f"could not process song {q['audio_path']}. reason: {e}")
+            print(f"could not process song {entry['audio_path']}. reason: {e}")
 
     end = time.time()
     print(f"execution for {len(questions)}: {(end - start) / 60} minutes")
