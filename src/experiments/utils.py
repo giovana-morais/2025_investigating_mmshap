@@ -1,3 +1,5 @@
+import argparse
+
 def parse_arguments():
     # Create the parser
     parser = argparse.ArgumentParser(description="Parse experiment settings.")

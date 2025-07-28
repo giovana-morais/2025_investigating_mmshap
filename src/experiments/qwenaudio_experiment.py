@@ -15,7 +15,6 @@ example usage
             --range=50
 """
 
-import argparse
 import json
 import os
 import time
@@ -293,15 +292,15 @@ if __name__ == "__main__":
         audio_url = os.path.join(data_path, "/".join(q["audio_path"].split("/")[1:]))
         question = q["prompt"]
 
-        # try:
-        response, question_mm_score = explain_ALM(
-            question, audio_url, model, tokenizer, args
-        )
-        mm_scores.append(question_mm_score)
-        q["model_output"] = response
-        q["mmshap_text"] = question_mm_score
-        # except Exception as e:
-        #     print(f"could not process song {q['audio_path']}. reason: {e}")
+        try:
+            response, question_mm_score = explain_ALM(
+                question, audio_url, model, tokenizer, args
+            )
+            mm_scores.append(question_mm_score)
+            q["model_output"] = response
+            q["mmshap_text"] = question_mm_score
+        except Exception as e:
+            print(f"could not process song {q['audio_path']}. reason: {e}")
 
     end = time.time()
     print(f"execution for {len(questions)}: {(end - start) / 60} minutes")
