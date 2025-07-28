@@ -90,6 +90,7 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
     Returns
     ---
     """
+
     def token_masker(mask, x):
         """
         Receives only valid tokens to mask. We don't do anything about audio
@@ -112,7 +113,6 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
         masked_X[~text_mask] = 0
 
         return masked_X.to("cpu")
-
 
     def get_prediction(x):
         nonlocal input_ids
@@ -213,7 +213,7 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
     audio = torch.from_numpy(audio)
 
     # audio windows have negative token_ids to distinguish them from text tokens
-    audio_token_ids = torch.tensor(range(-1, -(n_text_tokens+1), -1)).unsqueeze(0)
+    audio_token_ids = torch.tensor(range(-1, -(n_text_tokens + 1), -1)).unsqueeze(0)
     audio_token_ids = audio_token_ids.to("cuda:0")
     print(f"number of text tokens: {n_text_tokens}")
     print(f"number of audio tokens: {audio_token_ids.shape}")
@@ -227,14 +227,16 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
     print("shap_values.shape", shap_values.shape)
 
     np.save(
-            os.path.join(entry["output_folder"], f"{entry['question_id']}_shapley_values.npy"),
-            shap_values.values)
+        os.path.join(
+            entry["output_folder"], f"{entry['question_id']}_shapley_values.npy"
+        ),
+        shap_values.values,
+    )
     np.save(
-            os.path.join(entry["output_folder"], f"{entry['question_id']}_base_values.npy"),
-            shap_values.base_values)
-    np.save(
-            os.path.join(entry["output_folder"], f"{entry['question_id']}_tokens"),
-            X)
+        os.path.join(entry["output_folder"], f"{entry['question_id']}_base_values.npy"),
+        shap_values.base_values,
+    )
+    np.save(os.path.join(entry["output_folder"], f"{entry['question_id']}_tokens"), X)
 
     return response
 
@@ -282,29 +284,31 @@ if __name__ == "__main__":
         trust_remote_code=True,
     ).eval()
 
-
     start = time.time()
 
-    experiment_type = f"{args.model}_{os.path.basename(args.input_path).replace('.json', '')}"
+    experiment_type = (
+        f"{args.model}_{os.path.basename(args.input_path).replace('.json', '')}"
+    )
     print("experiment type", experiment_type)
 
     for entry in questions:
         kwargs = {}
 
-        audio_url = os.path.join(dataset_path, "/".join(entry["audio_path"].split("/")[1:]))
-        output_folder = os.path.join("data/output_data", experiment_type, str(entry["question_id"]))
+        audio_url = os.path.join(
+            dataset_path, "/".join(entry["audio_path"].split("/")[1:])
+        )
+        output_folder = os.path.join(
+            "data/output_data", experiment_type, str(entry["question_id"])
+        )
         entry["output_folder"] = output_folder
         os.makedirs(output_folder, exist_ok=True)
 
         try:
-            response = explain_ALM(
-                entry, audio_url, model, tokenizer, args
-            )
+            response = explain_ALM(entry, audio_url, model, tokenizer, args)
             entry["model_output"] = response
 
             with open(entry_folder + ".json", "w") as f:
                 json.dump(entry, f)
-
 
         except Exception as e:
             print(f"could not process song {entry['audio_path']}. reason: {e}")
