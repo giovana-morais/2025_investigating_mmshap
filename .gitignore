@@ -9,7 +9,7 @@
 
 # generated files
 logs/*
-output_data/*
+data/output_data/*
 
 # singuconda
 sing
