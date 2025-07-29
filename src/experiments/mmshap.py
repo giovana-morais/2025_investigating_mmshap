@@ -1,19 +1,22 @@
-def compute_mm_score(audio_length, shap_values, method="avg", verbose=False):
+import numpy as np
+
+def compute_mm_score(audio_length, shap_values, method="sum", verbose=False):
     """
     Compute Multimodality Score.
     """
-    if method == "avg":
+    if method == "sum":
         audio_contrib = np.abs(shap_values.values[0, 0, :audio_length, :]).sum()
         text_contrib = np.abs(shap_values.values[0, 0, audio_length:, :]).sum()
 
         text_score = text_contrib / (text_contrib + audio_contrib)
         audio_score = audio_contrib / (text_contrib + audio_contrib)
-    elif method == "weighted_avg":
+    elif method == "avg":
         audio_contrib = np.abs(shap_values.values[0, 0, :audio_length, :]).mean()
         text_contrib = np.abs(shap_values.values[0, 0, audio_length:, :]).mean()
 
         text_score = text_contrib / (text_contrib + audio_contrib)
         audio_score = audio_contrib / (text_contrib + audio_contrib)
+    print("everything calculated")
 
     if verbose:
         print("compute_mm_score")

@@ -7,6 +7,10 @@
 *.ext3
 .*.sifpath
 
+# generated files
+logs/*
+data/output_data/*
+
 # singuconda
 sing
 singrw
