@@ -236,7 +236,8 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
         os.path.join(entry["output_folder"], f"{entry['question_id']}_base_values.npy"),
         shap_values.base_values,
     )
-    np.save(os.path.join(entry["output_folder"], f"{entry['question_id']}_tokens"), X)
+    np.save(os.path.join(entry["output_folder"],
+        f"{entry['question_id']}_tokens"), X.cpu().numpy())
 
     return response
 
@@ -307,7 +308,7 @@ if __name__ == "__main__":
             response = explain_ALM(entry, audio_url, model, tokenizer, args)
             entry["model_output"] = response
 
-            with open(entry_folder + ".json", "w") as f:
+            with open(output_folder + ".json", "w") as f:
                 json.dump(entry, f)
 
         except Exception as e:

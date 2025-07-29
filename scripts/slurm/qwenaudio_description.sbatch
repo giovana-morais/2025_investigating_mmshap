@@ -23,6 +23,5 @@ python \
 	--input_path=$input_path	\
 	--environment=$environment 	\
 	--range=$range 			\
-	--index=$index			\
-	--override
+	--index=$index
 EOF
