@@ -13,6 +13,7 @@ import torch.cuda
 import src.models.MULLaMA.llama
 from src.models.MULLaMA.util.misc import *
 from src.models.MULLaMA.data.utils import load_and_transform_audio_data
+
 import utils
 
 SAMPLE_RATE=24000
@@ -52,11 +53,7 @@ def multimodal_generate(
         nonlocal input_ids
         nonlocal audio
 
-        # text mask itself. shape (n, n_text_token)
-        # print("audio and input shaoe", audio_ids.shape, input_ids.shape)
-        # print("x.shape", x.shape)
         masked_text_tokens = torch.tensor(x[:, -input_ids.shape[1]:])
-        # print("masked_text_tokens.shape", masked_text_tokens.shape)
 
         # ids that we need to mask from audio (n, n_audio_tokens)
         masked_audio_token_ids = torch.tensor(x[:, :-input_ids.shape[1]])
@@ -98,7 +95,7 @@ def multimodal_generate(
     inputs['Audio'] = [audio, audio_weight]
     response = None
 
-    # i don't really understand why they put this insize a list, but for now i'm
+    # i don't really understand why they put this inside a list, but for now i'm
     # just keeping whatever the authors of the repo have as an example
     prompts = [llama.format_prompt(prompt)]
     prompts = [model.tokenizer.encode(x, bos=True, eos=False) for x in prompts]
@@ -125,14 +122,10 @@ def multimodal_generate(
     logits = output_logits[:, output_ids]
 
     # define how many patches we need to cover the audio based on text length
-    n_patches = math.ceil(math.sqrt(input_ids.shape[1]))
-    audio_ids = torch.tensor(range(-1, -n_patches**2-1, -1)).unsqueeze(0)
+    n_text_tokens = input_ids.shape[1]
+    audio_ids = torch.tensor(range(-1, -(n_text_tokens + 1), -1)).unsqueeze(0)
     input_ids = input_ids.to("cuda:0")
     audio_ids = audio_ids.to("cuda:0")
-    # print("input_ids.device", input_ids.device)
-    # print("audio_ids.device", audio_ids.device)
-    # print("input_ids.shape", input_ids.shape)
-    # print("audio_ids.shape", audio_ids.shape)
 
     X = torch.cat((audio_ids, input_ids), 1).unsqueeze(1)
     X.to("cpu")
@@ -140,10 +133,19 @@ def multimodal_generate(
 
     explainer = shap.Explainer(get_prediction, token_masker, silent=True, max_evals=800)
     shap_values = explainer(X)
-    np.save(f"/scratch/gv2167/ismir2025/ismir2025_exploration/extreme_case_analysis/mullama_{args.prompt_type}_base_values.npy", shap_values.base_values)
-    np.save(f"/scratch/gv2167/ismir2025/ismir2025_exploration/extreme_case_analysis/mullama_{args.prompt_type}_shapley_values.npy", shap_values.values)
-    np.save(f"/scratch/gv2167/ismir2025/ismir2025_exploration/extreme_case_analysis/mullama_{args.prompt_type}_tokens.npy", X.cpu().numpy())
-    mm_score = compute_mm_score(audio_ids.shape[1], shap_values)
+
+    np.save(
+        os.path.join(
+            entry["output_folder"], f"{entry['question_id']}_shapley_values.npy"
+        ),
+        shap_values.values,
+    )
+    np.save(
+        os.path.join(entry["output_folder"], f"{entry['question_id']}_base_values.npy"),
+        shap_values.base_values,
+    )
+    np.save(os.path.join(entry["output_folder"],
+        f"{entry['question_id']}_tokens"), X.cpu().numpy())
     return response, mm_score
 
 
@@ -155,60 +157,59 @@ if __name__ == "__main__":
     else:
         data_path = "/media/gigibs/DD02EEEC68459F17/datasets"
 
-    with open(questions_path, "r") as f:
+    with open(args.input_path, "r") as f:
         questions = json.load(f)
 
-    questions = questions[args.range*args.index:args.range*(args.index+1)]
-    print(f"processing {len(questions)} questions from {args.range*args.index}:{args.range*args.index+1}")
+    if args.range is not None:
+        questions = questions[args.range * args.index : args.range * (args.index + 1)]
+        print(
+            f"processing {len(questions)} questions from {args.range * args.index}:{args.range * (args.index + 1)}"
+        )
+    else:
+        print(f"processing {len(questions)} questions")
 
-    if args.output_path is not None:
-        output_path = args.output_path
-
-    print(f"output_path = {output_path}")
+    with open("config.yml", "r") as f:
+        config = yaml.safe_load(f)
 
     # load model
-    mullama_dir = "/scratch/gv2167/ismir2025/ismir2025_exploration/models/mullama/ckpts/checkpoint.pth"
-    llama_dir = "/scratch/gv2167/ismir2025/ismir2025_exploration/models/mullama/ckpts/LLaMA"
+    base_path = "/scratch/gv2167/2025_investigating_mmshap/src/models/MULLaMA/MU_LLaMA"
+    mullama_dir = os.path.join(base_path, "ckpts/checkpoint.pth")
+    llama_dir = os.path.join(base_path, "ckpts/LLaMA")
     llama_type = "7B"
-    knn_dir = "/scratch/gv2167/ismir2025/ismir2025_exploration/models/mullama/ckpts"
+    knn_dir = os.path.join(base_path, "ckpts")
 
     model = llama.load(mullama_dir, llama_dir, knn=True, knn_dir=knn_dir, llama_type=llama_type)
     model.eval()
 
     # start processing
     start = time.time()
-    mm_scores = []
-    for q in questions:
-        question = q["prompt"]
 
-        if args.prompt_type == "zero_shot":
-            question = "Question:" + q["prompt"].split("Question:")[-1]
-        elif args.prompt_type == "description":
-            question = "Please describe the song."
-        elif args.prompt_type == "description_zero_shot":
-            preamble = "Please describe the following audio and then answer the question. "
-            question = preamble + "Question:" + q["prompt"].split("Question:")[-1]
-        elif args.prompt_type == "single_question":
-            question = "What is the capital of Egypt?"
-        elif args.prompt_type == "question_only":
-            question = q["prompt"].split("Question:")[-1].split("\n")[0]
-        elif args.prompt_type == "single_question_mc":
-            question = "What is the capital of Egypt?\n(A) Montevideo\n(B) Tokyo\n(C) Cairo\n(D) London"
+    experiment_type = (
+        f"{args.model}_{os.path.basename(args.input_path).replace('.json', '')}"
+    )
+    print("experiment type", experiment_type)
+
+    for entry in questions:
+        kwargs = {}
+
+        audio_url = os.path.join(
+            dataset_path, "/".join(entry["audio_path"].split("/")[1:])
+        )
+        output_folder = os.path.join(
+            "data/output_data", experiment_type, str(entry["question_id"])
+        )
+        entry["output_folder"] = output_folder
+        os.makedirs(output_folder, exist_ok=True)
 
         try:
-            audio_url = os.path.join(data_path, "/".join(q["audio_path"].split("/")[1:]))
-            response, question_mm_score = multimodal_generate(audio_url, 1, question, 100, 20.0, 0.0, 256, 0.6, 0.8)
-            mm_scores.append(question_mm_score)
-            q["model_output"] = response
-            q["mmshap_text"] = question_mm_score
+            response = explain_ALM(entry, audio_url, model, tokenizer, args)
+            entry["model_output"] = response
+
+            with open(output_folder + ".json", "w") as f:
+                json.dump(entry, f)
+
         except Exception as e:
-            print(f"could not process song {q['audio_path']}. reason: {e}")
+            print(f"could not process song {entry['audio_path']}. reason: {e}")
 
     end = time.time()
-    print(f"execution for {len(questions)}: {(end - start)/60} minutes")
-    mm_scores = np.asarray(mm_scores)
-    print(f"avg text score for the dataset: {mm_scores.mean()}")
-    print(f"avg audio score for the dataset: {1-mm_scores.mean()}")
-
-    with open(output_path, "w") as f:
-        json.dump(questions, f)
+    print(f"execution for {len(questions)}: {(end - start) / 60} minutes")
