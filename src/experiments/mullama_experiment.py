@@ -2,7 +2,6 @@
 run MM-SHAP for MU-LLaMA
 """
 import json
-import math
 import os
 import time
 
@@ -10,23 +9,24 @@ import numpy as np
 import shap
 import torch.cuda
 
-import src.models.MULLaMA.llama
-from src.models.MULLaMA.util.misc import *
-from src.models.MULLaMA.data.utils import load_and_transform_audio_data
-
+import models.MULLaMA.MU_LLaMA.llama as llama
 import utils
+from models.MULLaMA.MU_LLaMA.util.misc import *
+from models.MULLaMA.MU_LLaMA.data.utils import load_and_transform_audio_data
 
 SAMPLE_RATE=24000
 
-def multimodal_generate(
+def explain_ALM(
+        entry,
         audio_path,
-        audio_weight,
-        prompt,
-        cache_size,
-        cache_t,
-        cache_weight,
-        max_gen_len,
-        gen_t, top_p
+        model,
+        args,
+        audio_weight=1,
+        cache_size=100,
+        cache_t=20.0,
+        cache_weight=0.0,
+        max_gen_len=256,
+        gen_t=0.6, top_p=0.8
 ):
     def token_masker(mask, x):
         """
@@ -89,15 +89,15 @@ def multimodal_generate(
             result[i] = logits[0, output_ids]
         return result
 
-    inputs = {}
     # audio is an array. we mask it directly.
     audio = load_and_transform_audio_data([audio_path])
+    inputs = {}
     inputs['Audio'] = [audio, audio_weight]
     response = None
 
     # i don't really understand why they put this inside a list, but for now i'm
     # just keeping whatever the authors of the repo have as an example
-    prompts = [llama.format_prompt(prompt)]
+    prompts = [llama.format_prompt(entry["prompt"])]
     prompts = [model.tokenizer.encode(x, bos=True, eos=False) for x in prompts]
 
     input_ids = torch.tensor(prompts)
@@ -108,7 +108,7 @@ def multimodal_generate(
             max_gen_len=max_gen_len,
             temperature=gen_t,
             top_p=top_p,
-                cache_size=cache_size,
+            cache_size=cache_size,
             cache_t=cache_t,
             cache_weight=cache_weight
         )
@@ -146,16 +146,16 @@ def multimodal_generate(
     )
     np.save(os.path.join(entry["output_folder"],
         f"{entry['question_id']}_tokens"), X.cpu().numpy())
-    return response, mm_score
+    return response
 
 
 if __name__ == "__main__":
     args = utils.parse_arguments()
 
     if args.environment == "hpc":
-        data_path = "/scratch/gv2167/datasets"
+        dataset_path = "/scratch/gv2167/datasets"
     else:
-        data_path = "/media/gigibs/DD02EEEC68459F17/datasets"
+        dataset_path = "/media/gigibs/DD02EEEC68459F17/datasets"
 
     with open(args.input_path, "r") as f:
         questions = json.load(f)
@@ -168,17 +168,15 @@ if __name__ == "__main__":
     else:
         print(f"processing {len(questions)} questions")
 
-    with open("config.yml", "r") as f:
-        config = yaml.safe_load(f)
-
     # load model
     base_path = "/scratch/gv2167/2025_investigating_mmshap/src/models/MULLaMA/MU_LLaMA"
     mullama_dir = os.path.join(base_path, "ckpts/checkpoint.pth")
     llama_dir = os.path.join(base_path, "ckpts/LLaMA")
     llama_type = "7B"
+    mert_path = "m-a-p/MERT-v1-330M"
     knn_dir = os.path.join(base_path, "ckpts")
 
-    model = llama.load(mullama_dir, llama_dir, knn=True, knn_dir=knn_dir, llama_type=llama_type)
+    model = llama.load(mullama_dir, llama_dir, mert_path=mert_path, knn=True, knn_dir=knn_dir, llama_type=llama_type)
     model.eval()
 
     # start processing
@@ -201,15 +199,16 @@ if __name__ == "__main__":
         entry["output_folder"] = output_folder
         os.makedirs(output_folder, exist_ok=True)
 
-        try:
-            response = explain_ALM(entry, audio_url, model, tokenizer, args)
-            entry["model_output"] = response
+        # try:
+        response = explain_ALM(entry=entry, audio_path=audio_url,
+                model=model, args=args)
+        entry["model_output"] = response
 
-            with open(output_folder + ".json", "w") as f:
-                json.dump(entry, f)
+        with open(output_folder + ".json", "w") as f:
+            json.dump(entry, f)
 
-        except Exception as e:
-            print(f"could not process song {entry['audio_path']}. reason: {e}")
+        # except Exception as e:
+            # print(f"could not process song {entry['audio_path']}. reason: {e}")
 
     end = time.time()
     print(f"execution for {len(questions)}: {(end - start) / 60} minutes")

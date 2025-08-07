@@ -7,6 +7,8 @@ Source code for the paper "Measuring Modality Contribution in Music Understandin
 ## Getting Started
 ---
 
+This project was developed with Python 3.10
+
 ### Dependencies
 
 The two models we use are available on GitHub and you can download them as
