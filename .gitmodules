@@ -1,3 +1,6 @@
 [submodule "src/models/Qwen-Audio"]
 	path = src/models/Qwen_Audio
 	url = https://github.com/QwenLM/Qwen-Audio
+[submodule "src/models/MULLaMA"]
+	path = src/models/MULLaMA
+	url = git@github.com:ncsrsadhana/MULLaMA.git
