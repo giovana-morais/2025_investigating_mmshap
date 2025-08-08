@@ -4,7 +4,7 @@
 #SBATCH --time=4:00:00
 #SBATCH --gres gpu:1
 #SBATCH --job-name=mullama_fs_%j
-#SBATCH --output logs/mullama_fs_%j.out
+#SBATCH --output logs/mullama_fs.out
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=gv2167@nyu.edu
 #SBATCH --account=pr_230_tandon_priority

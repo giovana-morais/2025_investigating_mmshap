@@ -4,7 +4,7 @@
 #SBATCH --time=4:00:00
 #SBATCH --gres gpu:1
 #SBATCH --job-name=qwenaudio_desc_%j
-#SBATCH --output logs/qwenaudio_desc_%j.out
+#SBATCH --output logs/qwenaudio_desc.out
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=gv2167@nyu.edu
 #SBATCH --account=pr_230_tandon_priority
@@ -15,6 +15,7 @@ environment="hpc"
 system_instruction="default"
 range=1
 index=$SLURM_ARRAY_TASK_ID
+model="qwenaudio"
 input_path="${base_path}/data/input_data/muchomusic_musiccaps_desc.json"
 
 $base_path/sing_qwen << EOF
@@ -22,6 +23,7 @@ python \
 	$base_path/src/experiments/qwenaudio_experiment.py \
 	--input_path=$input_path	\
 	--environment=$environment 	\
+	--model=$model 			\
 	--range=$range 			\
 	--index=$index
 EOF

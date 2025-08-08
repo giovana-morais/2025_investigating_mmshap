@@ -127,7 +127,7 @@ def explain_ALM(
     eos_position = torch.where(tokens == model.tokenizer.eos_id)[1][0]
     output_ids = tokens[:, input_ids.shape[1]:eos_position]
 
-    logits = output_logits[:, output_ids]
+    # logits = output_logits[:, output_ids]
 
     # define how many patches we need to cover the audio based on text length
     n_text_tokens = input_ids.shape[1]

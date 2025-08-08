@@ -14,9 +14,9 @@ echo "To access:"
 echo "ssh -L $port:localhost:$port $USER@greene.hpc.nyu.edu"
 echo "ssh -L $port:localhost:$port greene"
 
-./singrw << EOF
+./singrw_qwen << EOF
 
-python -m ipykernel install --name sing --user
+python -m ipykernel install --name sing_qwen --user
 jupyter lab --no-browser --port $port
 
 EOF
