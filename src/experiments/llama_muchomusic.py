@@ -4,9 +4,6 @@ Llama3 inference on MuChoMusic
 
 import argparse
 import json
-import multiprocessing
-import random
-from collections import Counter
 
 import transformers
 import torch
