@@ -133,6 +133,9 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
         # results is the (number of permutations, number of output_ids)
         result = np.zeros((masked_text_tokens.shape[0], output_ids.shape[1]))
 
+        # get the size (in samples) of the windows we're masking
+        audio_segment_size = audio.shape[0] // masked_audio_token_ids.shape[1]
+
         for i in range(masked_text_tokens.shape[0]):
             # replace the question tokens for the masked ones, keep everything else
             iteration_input_id = masked_input_ids.clone().detach().to("cuda:0")
@@ -142,7 +145,9 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
             masked_audio = audio.clone().detach()
             to_mask = torch.where(masked_audio_token_ids[i] == 0)[0]
             for k in to_mask:
-                masked_audio[k * SAMPLE_RATE : (k + 1) * SAMPLE_RATE] = 0
+                start = k * audio_segment_size
+                end = min((k + 1) * audio_segment_size, masked_audio.shape[0])  # ensure we don't go past the end
+                masked_audio[start:end] = 0
 
             masked_audio_info = tokenizer.process_audio_no_url(masked_audio, audio_url)
             kwargs["audio_info"] = masked_audio_info
@@ -213,7 +218,9 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
     audio = torch.from_numpy(audio)
 
     # audio windows have negative token_ids to distinguish them from text tokens
-    audio_token_ids = torch.tensor(range(-1, -(n_text_tokens + 1), -1)).unsqueeze(0)
+    # audio_token_ids = torch.tensor(range(-1, -(n_text_tokens + 1), -1)).unsqueeze(0)
+    # FIXME: remove later
+    audio_token_ids = torch.tensor(range(-1, -10, -1)).unsqueeze(0)
     audio_token_ids = audio_token_ids.to("cuda:0")
     print(f"number of text tokens: {n_text_tokens}")
     print(f"number of audio tokens: {audio_token_ids.shape}")

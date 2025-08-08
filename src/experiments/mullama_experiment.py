@@ -60,15 +60,23 @@ def explain_ALM(
 
         # results is the (number of permutations, number of output_ids)
         result = np.zeros((masked_text_tokens.shape[0], output_ids.shape[1]))
+
+        # get the size (in samples) of the windows we're masking
+        audio_segment_size = audio.shape[0] // masked_audio_token_ids.shape[1]
+
+        # initialize dictionary to add masked audio
         masked_inputs = {}
 
         for i in range(masked_text_tokens.shape[0]):
             masked_prompt = masked_text_tokens[i].unsqueeze(0).clone().detach().to("cuda:0")
             masked_audio = audio.clone().detach()
+
             # zero the audio patches (audio is already resampled)
             to_mask = torch.where(masked_audio_token_ids[i] == 0)[0]
             for k in to_mask:
-                masked_audio[k*SAMPLE_RATE:(k+1)*SAMPLE_RATE] = 0
+                start = k * audio_segment_size
+                end = min((k + 1) * audio_segment_size, masked_audio.shape[0])  # ensure we don't go past the end
+                masked_audio[start:end] = 0
 
             masked_inputs["Audio"] = [masked_audio, 1.]
             # generate answer with masked audio and masked input
