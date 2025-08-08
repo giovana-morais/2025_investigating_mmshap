@@ -13,16 +13,18 @@ from src.models.Qwen_Audio.audio import *
 
 def test_empty_audio(tokenizer):
     """Test case A: Empty audio should return None"""
+    audio_url = "<audio>tests/audio.wav</audio>"
     empty_audio = np.array([])
-    result = tokenizer.process_audio_no_url(empty_audio)
+    result = tokenizer.process_audio_no_url(empty_audio, audio_url)
     assert result is None
 
 
 def test_mono_audio(tokenizer):
     """Test case B: Mono audio (1 channel)"""
     # Create mono audio (shape: [samples])
+    audio_url = "<audio>tests/audio.wav</audio>"
     mono_audio = torch.rand(16000)  # 1 second of audio at 16kHz
-    result = tokenizer.process_audio_no_url(mono_audio)
+    result = tokenizer.process_audio_no_url(mono_audio, audio_url)
 
     assert isinstance(result, dict)
     assert "input_audios" in result
@@ -38,8 +40,9 @@ def test_mono_audio(tokenizer):
 def test_stereo_audio(tokenizer):
     """Test case C: Stereo audio (2 channels)"""
     # Create stereo audio (shape: [2, samples])
+    audio_url = "<audio>tests/audio.wav</audio>"
     stereo_audio = torch.rand(2, 48000)  # 2 channels, 3 seconds at 16kHz
-    result = tokenizer.process_audio_no_url(stereo_audio)
+    result = tokenizer.process_audio_no_url(stereo_audio, audio_url)
 
     assert isinstance(result, dict)
     # Should flatten stereo to mono, so same checks as mono apply
@@ -50,7 +53,8 @@ def test_stereo_audio(tokenizer):
 def test_audio_too_long(tokenizer):
     """Test audio longer than 30s gets truncated"""
     long_audio = torch.rand(480001)  # 30s + 1 sample
-    result = tokenizer.process_audio_no_url(long_audio)
+    audio_url = "<audio>tests/audio.wav</audio>"
+    result = tokenizer.process_audio_no_url(long_audio, audio_url)
 
     # Should be truncated to 480000 samples
     assert result["input_audios"].shape[2] == 3000  # 480000 / 160 = 3000
