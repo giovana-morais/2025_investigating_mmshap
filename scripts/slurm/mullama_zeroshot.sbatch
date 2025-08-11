@@ -3,8 +3,8 @@
 #SBATCH --mem 64GB
 #SBATCH --time=4:00:00
 #SBATCH --gres gpu:1
-#SBATCH --job-name=mullama_fs_%j
-#SBATCH --output logs/mullama_fs.out
+#SBATCH --job-name=mullama_zs_%j
+#SBATCH --output logs/mullama_zs_%j.out
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=gv2167@nyu.edu
 #SBATCH --account=pr_230_tandon_priority
@@ -16,7 +16,7 @@ system_instruction="default"
 range=1
 index=$SLURM_ARRAY_TASK_ID
 model="mullama"
-input_path="${base_path}/data/input_data/muchomusic_musiccaps_fs.json"
+input_path="${base_path}/data/input_data/muchomusic_musiccaps_zs.json"
 
 $base_path/sing_mu << EOF
 python \

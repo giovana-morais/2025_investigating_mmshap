@@ -20,16 +20,14 @@ import time
 import numpy as np
 import shap
 import torch
-import torchaudio
-import torchaudio.functional as F
 import yaml
 from transformers import AutoModelForCausalLM
 # torch.manual_seed(1234)
 
+import models.Qwen_Audio.qwen_generation_utils as qwen_gen_utils
+import utils
 from models.custom_qwen_tokenizer import CustomQwenTokenizer
 from models.Qwen_Audio.audio import load_audio, SAMPLE_RATE
-from utils import *
-import models.Qwen_Audio.qwen_generation_utils as qwen_gen_utils
 
 
 def compute_tokens(
@@ -48,11 +46,7 @@ def compute_tokens(
     """
     generation_config = model.generation_config
 
-    if history is None:
-        history = []
-    else:
-        # make a copy of the user's input such that is is left untouched
-        history = copy.deepcopy(history)
+    history = []
 
     if stop_words_ids is None:
         stop_words_ids = []
@@ -121,28 +115,33 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
         nonlocal n_text_tokens
         nonlocal audio_info
 
-        # text mask itself. shape (n, n_text_token)
+        # text mask. (n, n_text_token)
         masked_text_tokens = torch.tensor(x[:, -n_text_tokens:])
 
-        # ids that we need to mask from audio (n, n_audio_tokens)
+        # tokens to mask audio. (n, n_audio_tokens)
         masked_audio_token_ids = torch.tensor(x[:, :-n_text_tokens])
 
         # clone original input_ids for inference
         masked_input_ids = input_ids.clone().detach()
 
-        # results is the (number of permutations, number of output_ids)
+        # results.shape is (number of permutations, number of output_ids)
         result = np.zeros((masked_text_tokens.shape[0], output_ids.shape[1]))
+
+        # get the size (in samples) of the windows we're masking
+        audio_segment_size = audio.shape[0] // masked_audio_token_ids.shape[1]
 
         for i in range(masked_text_tokens.shape[0]):
             # replace the question tokens for the masked ones, keep everything else
             iteration_input_id = masked_input_ids.clone().detach().to("cuda:0")
             iteration_input_id[:, interval[0] : interval[1]] = masked_text_tokens[i, :]
 
-            # zero the audio patches
+            # zero the audio segments
             masked_audio = audio.clone().detach()
             to_mask = torch.where(masked_audio_token_ids[i] == 0)[0]
             for k in to_mask:
-                masked_audio[k * SAMPLE_RATE : (k + 1) * SAMPLE_RATE] = 0
+                start = k * audio_segment_size
+                end = min((k + 1) * audio_segment_size, masked_audio.shape[0])  # ensure we don't go past the end
+                masked_audio[start:end] = 0
 
             masked_audio_info = tokenizer.process_audio_no_url(masked_audio, audio_url)
             kwargs["audio_info"] = masked_audio_info
@@ -243,7 +242,7 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
 
 
 if __name__ == "__main__":
-    args = parse_arguments()
+    args = utils.parse_arguments()
 
     if args.environment == "hpc":
         dataset_path = "/scratch/gv2167/datasets"
