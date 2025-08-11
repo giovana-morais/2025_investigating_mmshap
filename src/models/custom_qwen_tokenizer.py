@@ -36,8 +36,6 @@ class CustomQwenTokenizer(QWenTokenizer):
                 "input_audios": input_audios,
                 "input_audio_lengths": input_audio_lengths,
                 "audio_span_tokens": audio_span_tokens,
-                # FIXME: now we leave this url as none, but we might want to
-                # receive this as an argument afterwards
                 "audio_urls": audio_urls,
             }
         else:
