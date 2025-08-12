@@ -207,6 +207,7 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
     text_tokens, n_text_tokens, interval = tokenizer.get_number_of_question_tokens(
         input_ids, special_tokens
     )
+    print(tokenizer.convert_ids_to_tokens(text_tokens))
     text_tokens = text_tokens.unsqueeze(0)
     audio = load_audio(audio_url, sr=SAMPLE_RATE)
     audio = torch.from_numpy(audio)
@@ -225,18 +226,16 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
     shap_values = explainer(X)
     print("shap_values.shape", shap_values.shape)
 
-    np.save(
-        os.path.join(
-            entry["output_folder"], f"{entry['question_id']}_shapley_values.npy"
-        ),
-        shap_values.values,
+    outfile = os.path.join(entry["output_folder"],
+            f"{entry['question_id']}_info.npz")
+
+    np.savez(outfile,
+            shapley_values=shap_values.values,
+            base_values=shap_values.base_values,
+            input_ids=X.cpu().numpy(),
+            input_tokens_str=tokenizer.convert_ids_to_tokens(text_tokens)
+            output_tokens_str=tokenizer.convert_ids_to_tokens(output_ids)
     )
-    np.save(
-        os.path.join(entry["output_folder"], f"{entry['question_id']}_base_values.npy"),
-        shap_values.base_values,
-    )
-    np.save(os.path.join(entry["output_folder"],
-        f"{entry['question_id']}_tokens"), X.cpu().numpy())
 
     return response
 

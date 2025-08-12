@@ -132,6 +132,8 @@ def explain_ALM(
     # define how many patches we need to cover the audio based on text length
     n_text_tokens = input_ids.shape[1]
     audio_ids = torch.tensor(range(-1, -(n_text_tokens + 1), -1)).unsqueeze(0)
+    entry["n_text_tokens"] = n_text_tokens
+    entry["n_audio_tokens"] = audio_ids.shape[-1]
     input_ids = input_ids.to("cuda:0")
     audio_ids = audio_ids.to("cuda:0")
 
@@ -142,18 +144,17 @@ def explain_ALM(
     explainer = shap.Explainer(get_prediction, token_masker, silent=True, max_evals=800)
     shap_values = explainer(X)
 
-    np.save(
-        os.path.join(
-            entry["output_folder"], f"{entry['question_id']}_shapley_values.npy"
-        ),
-        shap_values.values,
+    outfile = os.path.join(entry["output_folder"],
+            f"{entry['question_id']}_info.npz")
+
+    np.savez(outfile,
+            shapley_values=shap_values.values,
+            base_values=shap_values.base_values,
+            input_ids=X.cpu().numpy(),
+            input_tokens_str=model.tokenizer.convert_ids_to_tokens(text_tokens)
+            output_tokens_str=model.tokenizer.convert_ids_to_tokens(output_ids)
     )
-    np.save(
-        os.path.join(entry["output_folder"], f"{entry['question_id']}_base_values.npy"),
-        shap_values.base_values,
-    )
-    np.save(os.path.join(entry["output_folder"],
-        f"{entry['question_id']}_tokens"), X.cpu().numpy())
+
     return response
 
 
