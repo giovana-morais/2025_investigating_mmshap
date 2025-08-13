@@ -12,6 +12,8 @@ logs/*
 data/output_data/*
 
 # singuconda
+sing
+singrw
 sing_qwen
 singrw_qwen
 sing_mu
