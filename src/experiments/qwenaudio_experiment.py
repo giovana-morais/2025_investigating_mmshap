@@ -210,16 +210,6 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
     question_tokens, n_question_tokens, interval = tokenizer.get_number_of_question_tokens(
         input_ids, special_tokens
     )
-    # print("question_tokens.shape", question_tokens.shape)
-    # print("type(question_tokens)", type(question_tokens))
-    # print("convert(question_tokens)", tokenizer.convert_ids_to_tokens(question_tokens))
-    # print("type(convert(question_tokens)[1])", type(tokenizer.convert_ids_to_tokens(question_tokens)[1]))
-    # print("convert(question_tokens).shape)",
-    #         type(tokenizer.convert_ids_to_tokens(question_tokens)[1]))
-    # print("output_ids.shape", output_ids.shape)
-    # print("type(output_ids)", type(output_ids))
-    # print("convert(output_ids)",
-    #         tokenizer.convert_ids_to_tokens(output_ids.squeeze(0)))
     question_tokens = question_tokens.unsqueeze(0)
     audio = load_audio(audio_url, sr=SAMPLE_RATE)
     audio = torch.from_numpy(audio)

@@ -53,13 +53,13 @@ def explain_ALM(
         nonlocal input_ids
         nonlocal audio
 
-        masked_text_tokens = torch.tensor(x[:, -input_ids.shape[1]:])
+        masked_question_tokens = torch.tensor(x[:, -input_ids.shape[1]:])
 
         # ids that we need to mask from audio (n, n_audio_tokens)
         masked_audio_token_ids = torch.tensor(x[:, :-input_ids.shape[1]])
 
         # results is the (number of permutations, number of output_ids)
-        result = np.zeros((masked_text_tokens.shape[0], output_ids.shape[1]))
+        result = np.zeros((masked_question_tokens.shape[0], output_ids.shape[1]))
 
         # get the size (in samples) of the windows we're masking
         audio_segment_size = audio.shape[0] // masked_audio_token_ids.shape[1]
@@ -67,8 +67,8 @@ def explain_ALM(
         # initialize dictionary to add masked audio
         masked_inputs = {}
 
-        for i in range(masked_text_tokens.shape[0]):
-            masked_prompt = masked_text_tokens[i].unsqueeze(0).clone().detach().to("cuda:0")
+        for i in range(masked_question_tokens.shape[0]):
+            masked_prompt = masked_question_tokens[i].unsqueeze(0).clone().detach().to("cuda:0")
             masked_audio = audio.clone().detach()
 
             # zero the audio patches (audio is already resampled)
@@ -108,6 +108,9 @@ def explain_ALM(
     prompts = [llama.format_prompt(entry["prompt"])]
     prompts = [model.tokenizer.encode(x, bos=True, eos=False) for x in prompts]
 
+    question_tokens = model.tokenizer.encode(entry["prompt"], bos=True, eos=False,
+        out_type=str)
+
     input_ids = torch.tensor(prompts)
     with torch.amp.autocast("cuda"):
         results, tokens, output_logits = model.generate(
@@ -120,6 +123,7 @@ def explain_ALM(
             cache_t=cache_t,
             cache_weight=cache_weight
         )
+
     response = results[0].strip()
 
     # removing whatever padding tokens we have after the end of sequence
@@ -127,12 +131,10 @@ def explain_ALM(
     eos_position = torch.where(tokens == model.tokenizer.eos_id)[1][0]
     output_ids = tokens[:, input_ids.shape[1]:eos_position]
 
-    # logits = output_logits[:, output_ids]
-
     # define how many patches we need to cover the audio based on text length
-    n_text_tokens = input_ids.shape[1]
-    audio_ids = torch.tensor(range(-1, -(n_text_tokens + 1), -1)).unsqueeze(0)
-    entry["n_text_tokens"] = n_text_tokens
+    n_question_tokens = input_ids.shape[1]
+    audio_ids = torch.tensor(range(-1, -(n_question_tokens + 1), -1)).unsqueeze(0)
+    entry["n_question_tokens"] = n_question_tokens
     entry["n_audio_tokens"] = audio_ids.shape[-1]
     input_ids = input_ids.to("cuda:0")
     audio_ids = audio_ids.to("cuda:0")
@@ -151,8 +153,8 @@ def explain_ALM(
             shapley_values=shap_values.values,
             base_values=shap_values.base_values,
             input_ids=X.cpu().numpy(),
-            input_tokens_str=model.tokenizer.convert_ids_to_tokens(text_tokens)
-            output_tokens_str=model.tokenizer.convert_ids_to_tokens(output_ids)
+            input_tokens_str=question_tokens,
+            output_tokens_str=model.tokenizer.decode_ids(output_ids.squeeze(0))
     )
 
     return response
@@ -203,7 +205,7 @@ if __name__ == "__main__":
             dataset_path, "/".join(entry["audio_path"].split("/")[1:])
         )
         output_folder = os.path.join(
-            "data/output_data", experiment_type, str(entry["question_id"])
+            "data/output_data", experiment_type
         )
         entry["output_folder"] = output_folder
         os.makedirs(output_folder, exist_ok=True)
