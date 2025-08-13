@@ -303,7 +303,7 @@ if __name__ == "__main__":
             dataset_path, "/".join(entry["audio_path"].split("/")[1:])
         )
         output_folder = os.path.join(
-            "data/output_data", experiment_type, str(entry["question_id"])
+            "data/output_data", experiment_type
         )
         entry["output_folder"] = output_folder
         os.makedirs(output_folder, exist_ok=True)
