@@ -210,16 +210,16 @@ if __name__ == "__main__":
         entry["output_folder"] = output_folder
         os.makedirs(output_folder, exist_ok=True)
 
-        # try:
-        response = explain_ALM(entry=entry, audio_path=audio_url,
-                model=model, args=args)
-        entry["model_output"] = response
+        try:
+            response = explain_ALM(entry=entry, audio_path=audio_url,
+                    model=model, args=args)
+            entry["model_output"] = response
 
-        with open(output_folder + ".json", "w") as f:
-            json.dump(entry, f)
+            with open(output_folder + f"{entry['question_id']}.json", "w") as f:
+                json.dump(entry, f)
 
-        # except Exception as e:
-            # print(f"could not process song {entry['audio_path']}. reason: {e}")
+        except Exception as e:
+            print(f"ERROR: Could not process song {entry['audio_path']}. Reason: {e}")
 
     end = time.time()
     print(f"execution for {len(questions)}: {(end - start) / 60} minutes")

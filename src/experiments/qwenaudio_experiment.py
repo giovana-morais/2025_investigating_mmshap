@@ -312,7 +312,7 @@ if __name__ == "__main__":
             response = explain_ALM(entry, audio_url, model, tokenizer, args)
             entry["model_output"] = response
 
-            with open(output_folder + ".json", "w") as f:
+            with open(output_folder + f"{entry['question_id']}.json", "w") as f:
                 json.dump(entry, f)
         except Exception as e:
             print(f"ERROR: Could not process song {entry['audio_path']}. Reason: {e}")
