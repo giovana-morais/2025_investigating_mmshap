@@ -75,8 +75,7 @@ def accuracy(df):
 def compute_mmshap_row(row):
     # FIXME: change the ".." for the actual repo path
     base_folder = ".."
-    file_path = os.path.join(base_folder,
-    f"{row.output_folder}_info.npz")
+    file_path = os.path.join(base_folder, row.output_folder, f"{row.question_id}_info.npz")
 
     output = np.load(file_path)
     shapley_values = output["shapley_values"]
