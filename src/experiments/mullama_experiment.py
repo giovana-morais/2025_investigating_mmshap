@@ -215,7 +215,7 @@ if __name__ == "__main__":
                     model=model, args=args)
             entry["model_output"] = response
 
-            with open(output_folder + f"{entry['question_id']}.json", "w") as f:
+            with open(os.path.join(output_folder, f"{entry['question_id']}.json"), "w") as f:
                 json.dump(entry, f)
 
         except Exception as e:
