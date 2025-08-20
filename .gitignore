@@ -3,6 +3,11 @@
 **/.ipynb_checkpoints/*
 **/investigate_mmshap.egg-info/
 
+# analysis output
+**/*.png
+**/*.pdf
+**/*.wav
+
 # singularity files
 *.ext3
 .*.sifpath
@@ -12,6 +17,8 @@ logs/*
 data/output_data/*
 
 # singuconda
+sing
+singrw
 sing_qwen
 singrw_qwen
 sing_mu

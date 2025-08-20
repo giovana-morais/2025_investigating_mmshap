@@ -18,7 +18,7 @@ index=$SLURM_ARRAY_TASK_ID
 model="qwenaudio"
 input_path="${base_path}/data/input_data/muchomusic_musiccaps_fs.json"
 
-$base_path/sing << EOF
+$base_path/sing_qwen << EOF
 python \
 	$base_path/src/experiments/qwenaudio_experiment.py \
 	--input_path=$input_path	\
