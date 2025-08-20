@@ -43,9 +43,9 @@ def visualize_shapley_analysis(text_shapley_values, question_tokens,
     # title = plt.suptitle(highlight_title(answer_tokens, idx), y=0.98, fontsize=14)
     if save:
         if idx is None:
-            plt.savefig("aggregated_output.pdf", format="pdf")
+            plt.savefig("aggregated_output.pdf", format="pdf", bbox_inches="tight")
         else:
-            plt.savefig(f"{idx}_{answer_tokens[idx].strip()}.pdf", format="pdf")
+            plt.savefig(f"{idx}_{answer_tokens[idx].strip()}.pdf", format="pdf", bbox_inches="tight")
     # print(title)
     # title(fig, answer_tokens, idx)
     # plt.tight_layout()
