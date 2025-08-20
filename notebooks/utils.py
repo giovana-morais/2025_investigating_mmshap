@@ -6,7 +6,7 @@ from experiments.mmshap import compute_mm_score
 
 
 # FIXME: find a better name for this function
-def parse_df(df):
+def parse_df(df, experiment_name):
     df["extracted_response"] = df[["model_output", "answers"]].apply(lambda x:
             extract_answer_pandas(x.model_output, x.answers), axis=1)
     df["final_answer"] = df[["extracted_response",
@@ -18,6 +18,10 @@ def parse_df(df):
             x.audio_path.replace("data/", ""), axis=1)
     df[["a_shap", "t_shap", "input_tokens", "output_tokens", "input_ids"]] = df.apply(compute_mmshap_row, axis=1)
 
+    df["experiment"] = experiment_name
+    df["len_output"] = df[["model_output"]].apply(lambda x: len(x.model_output), axis=1)
+    df["n_output_tokens"] = df[["output_tokens"]].apply(lambda x:
+            len(x.output_tokens), axis=1)
 
     df.set_index("question_id", inplace=True)
 
