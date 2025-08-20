@@ -3,6 +3,11 @@
 **/.ipynb_checkpoints/*
 **/investigate_mmshap.egg-info/
 
+# analysis output
+**/*.png
+**/*.pdf
+**/*.wav
+
 # singularity files
 *.ext3
 .*.sifpath
