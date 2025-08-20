@@ -8,7 +8,8 @@ def visualize_shapley_analysis(text_shapley_values, question_tokens,
                              audio_signal, audio_shapley_values, sample_rate,
                              gt_start, gt_end,
                              max_abs_value=None, colormap='viridis',
-                             figsize=(10, 8), idx=None, answer_tokens=None, threshold=0.8):
+                             figsize=(10, 8), idx=None, answer_tokens=None,
+                             threshold=0.8, save=True):
     """
     Combined visualization of text and audio Shapley values with shared color scaling.
     """
@@ -40,10 +41,11 @@ def visualize_shapley_analysis(text_shapley_values, question_tokens,
 
     # --- Formatting ---
     # title = plt.suptitle(highlight_title(answer_tokens, idx), y=0.98, fontsize=14)
-    if idx is None:
-        plt.savefig("aggregated_output.pdf", format="pdf")
-    else:
-        plt.savefig(f"{idx}_{answer_tokens[idx].strip()}.pdf", format="pdf")
+    if save:
+        if idx is None:
+            plt.savefig("aggregated_output.pdf", format="pdf")
+        else:
+            plt.savefig(f"{idx}_{answer_tokens[idx].strip()}.pdf", format="pdf")
     # print(title)
     # title(fig, answer_tokens, idx)
     # plt.tight_layout()
@@ -79,11 +81,12 @@ def visualize_audio(fig, gs, audio_signal, sample_rate, audio_shapley_values,
     ax_signal.set_yticks([])
 
     # Add ground truth rectangle
-    ymin, ymax = ax_signal.get_ylim()
-    ax_signal.axvspan(gt_start, gt_end, ymin=0, ymax=1,
-                     color='red', alpha=0.3, label='Ground Truth')
-    ax_signal.legend(loc='upper right')
-    ax_signal.tick_params(axis='x', bottom=False, labelbottom=False)
+    if gt_start is not None and gt_end is not None:
+        ymin, ymax = ax_signal.get_ylim()
+        ax_signal.axvspan(gt_start, gt_end, ymin=0, ymax=1,
+                         color='red', alpha=0.3, label='Ground Truth')
+        ax_signal.legend(loc='upper right')
+        ax_signal.tick_params(axis='x', bottom=False, labelbottom=False)
 
     # --- Audio Shapley visualizations ---
     # Calculate Shapley value components
@@ -177,7 +180,7 @@ def visualize_text(fig, gs, question_tokens, question_shapley_values, intensity_
         # leave inside the loop to restart the settings every token
         font_settings = {
             "fontname": "monospace",
-            "fontsize": 12
+            "fontsize": 14
         }
 
         # Set custom properties
