@@ -12,6 +12,9 @@
 *.ext3
 .*.sifpath
 
+notebooks/qwen_*/
+notebooks/mu_*/
+
 # generated files
 logs/*
 data/output_data/*
