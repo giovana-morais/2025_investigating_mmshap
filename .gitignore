@@ -12,8 +12,8 @@
 *.ext3
 .*.sifpath
 
-notebooks/qwen_*/
-notebooks/mu_*/
+data/qwen_*/
+data/mu_*/
 
 # generated files
 logs/*
