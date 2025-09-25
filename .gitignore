@@ -12,8 +12,8 @@
 *.ext3
 .*.sifpath
 
-data/qwen_*/
-data/mu_*/
+data/qual_analysis/qwen_*/
+data/qual_analysis/mu_*/
 
 # generated files
 logs/*
