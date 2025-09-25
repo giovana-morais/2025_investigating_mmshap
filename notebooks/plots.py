@@ -1,3 +1,9 @@
+"""
+TODO:
+    * separate each plot function (e.g. plot_waveform, plot_heatmap etc), and
+    then make vis_audio as a composition of these building blocks
+"""
+
 import os
 
 from matplotlib.colors import rgb2hex
@@ -15,28 +21,27 @@ def visualize_shapley_analysis(
     sample_rate,
     gt_start,
     gt_end,
-    max_abs_value=None,
     colormap="viridis",
-    figsize=(10, 8),
+    figsize=(5, 8),
     idx=None,
     answer_tokens=None,
     threshold=0.8,
     output_format="pdf",
     save_folder=None,
-    show_image=True
+    show_image=True,
 ):
     """
     Combined visualization of text and audio Shapley values with shared color scaling.
     """
     # Determine global color scaling
     # if max_abs_value is None:
-    #     text_max = np.max(np.abs(text_shapley_values))
-    #     audio_max = np.max(np.abs(audio_shapley_values))
-    #     max_abs_value = max(text_max, audio_max)
+    text_max = np.max(np.abs(text_shapley_values))
+    audio_max = np.max(np.abs(audio_shapley_values))
+    max_abs_value = max(text_max, audio_max)
 
     # Create figure
     fig = plt.figure(figsize=figsize)
-    gs = fig.add_gridspec(5, 2, height_ratios=[2, 4, 1, 1, 1], width_ratios=[10, 1])
+    gs = fig.add_gridspec(5, 2, height_ratios=[2, 1, 1, 1, 1], width_ratios=[10, 1])
 
     if idx is not None:
         text_shapley_values = text_shapley_values[:, idx]
@@ -45,6 +50,19 @@ def visualize_shapley_analysis(
         text_shapley_values = text_shapley_values.sum(axis=1)
         audio_shapley_values = audio_shapley_values.sum(axis=1)
 
+        # update max values
+        text_max = np.max(np.abs(text_shapley_values))
+        audio_max = np.max(np.abs(audio_shapley_values))
+        max_abs_value = max(text_max, audio_max)
+
+    print(
+        f"text_max {np.max(text_shapley_values)}, text_min {np.min(text_shapley_values)}, text_median {np.median(text_shapley_values)}"
+    )
+    print(
+        f"audio_max {np.max(audio_shapley_values)}, audio_min {np.min(audio_shapley_values)}, audio_median {np.median(audio_shapley_values)}"
+    )
+    print("max_abs_value", max_abs_value)
+
     visualize_text(
         fig,
         gs,
@@ -52,6 +70,7 @@ def visualize_shapley_analysis(
         text_shapley_values,
         colormap=colormap,
         intensity_threshold=threshold,
+        max_abs_value=max_abs_value,
     )
 
     visualize_audio(
@@ -64,6 +83,7 @@ def visualize_shapley_analysis(
         gt_end=gt_end,
         colormap=colormap,
         intensity_threshold=threshold,
+        max_abs_value=max_abs_value,
     )
 
     # --- Formatting ---
@@ -116,6 +136,7 @@ def visualize_audio(
     gt_end,
     intensity_threshold,
     colormap,
+    max_abs_value,
 ):
     # --- Time axis setup ---
     total_duration = len(audio_signal) / sample_rate  # Reused for all plots
@@ -139,22 +160,14 @@ def visualize_audio(
             alpha=0.3,
             label="Ground Truth",
         )
-        ax_signal.legend(loc="upper right")
-        ax_signal.tick_params(axis="x", bottom=False, labelbottom=False)
+        ax_signal.legend(loc="upper right", bbox_to_anchor=(1,1.8))
+    ax_signal.tick_params(axis="x", bottom=False, labelbottom=False)
 
     # --- Audio Shapley visualizations ---
     # Calculate Shapley value components
     abs_shapley = np.abs(audio_shapley_values)
     pos_shapley = np.clip(audio_shapley_values, a_min=0, a_max=None)
     neg_shapley = np.clip(audio_shapley_values, a_min=None, a_max=0)
-
-    # FIXME: does this make sense?
-    # if idx is None:
-    #     abs_shapley = abs_shapley.sum(axis=1)
-    #     pos_shapley = pos_shapley.sum(axis=1)
-    #     neg_shapley = neg_shapley.sum(axis=1)
-
-    max_abs_value = np.max(abs_shapley)
 
     # 2. Absolute Shapley values (heatmap)
     ax_abs = fig.add_subplot(
@@ -224,7 +237,13 @@ def visualize_audio(
 
 
 def visualize_text(
-    fig, gs, question_tokens, question_shapley_values, intensity_threshold, colormap
+    fig,
+    gs,
+    question_tokens,
+    question_shapley_values,
+    intensity_threshold,
+    colormap,
+    max_abs_value,
 ):
     # use first row, all columns
     question_text = fig.add_subplot(gs[0, 0:])
@@ -234,16 +253,16 @@ def visualize_text(
 
     # Initial position
     x_pos = 0.0
-    y_pos = 0.98
-    line_height = 0.16  # Space between lines
+    y_pos = 0.90
+    line_height = 0.22  # Space between lines
     previous_text_obj = None  # Track the previous text object
 
-    threshold = intensity_threshold * np.max(np.abs(question_shapley_values))
+    threshold = intensity_threshold * max_abs_value
     cmap = mpl.colormaps[colormap]
 
     for t, v in zip(question_tokens, question_shapley_values):
         # leave inside the loop to restart the settings every token
-        font_settings = {"fontname": "monospace", "fontsize": 14}
+        font_settings = {"fontname": "monospace", "fontsize": 11}
 
         # Set custom properties
         intensity = abs(v)
@@ -285,5 +304,176 @@ def visualize_text(
         if x_pos > 0.95:  # Leave 10% margin on right
             x_pos = 0
             y_pos -= line_height
+    return
+
+
+def add_waveform(
+    fig,
+    gs,
+    audio_signal,
+    sample_rate,
+    gt_start,
+    gt_end,
+):
+    # --- Time axis setup ---
+    total_duration = len(audio_signal) / sample_rate  # Reused for all plots
+    time_axis = np.linspace(0, total_duration, len(audio_signal))
+
+    # --- 1. Signal plot (top subplot) ---
+    ax_signal = fig.add_subplot(gs)
+    ax_signal.plot(time_axis, audio_signal, color="gray", alpha=0.7, linewidth=0.5)
+    ax_signal.set_yticks([])
+
+    # Add ground truth rectangle
+    if gt_start is not None and gt_end is not None:
+        ymin, ymax = ax_signal.get_ylim()
+        ax_signal.axvspan(
+            gt_start,
+            gt_end,
+            ymin=0,
+            ymax=1,
+            color="red",
+            alpha=0.3,
+            label="Ground Truth",
+        )
+        ax_signal.legend(loc="upper right", bbox_to_anchor=(5,5))
+        ax_signal.tick_params(axis="x", bottom=False, labelbottom=False)
+
+    return ax_signal
+
+
+def add_heatmap(
+    fig,
+    gs,
+    audio_signal,
+    sample_rate,
+    intensity_threshold,
+    colormap,
+    audio_shapley_values,
+    min_value,
+    max_value,
+    ax_signal,
+    label,
+):
+    total_duration = len(audio_signal) / sample_rate  # Reused for all plots
+    # Calculate Shapley value components
+    abs_shapley = np.abs(audio_shapley_values)
+
+    # 2. Absolute Shapley values (heatmap)
+    ax_heatmap = fig.add_subplot(gs, sharex=ax_signal)  # Share x-axis with signal plot
+    im = ax_heatmap.imshow(
+        np.repeat(abs_shapley.reshape(1, -1), 10, axis=0),
+        aspect="auto",
+        cmap=colormap,
+        extent=[0, total_duration, 0, 1],  # Match audio signal's time range
+        vmin=min_value,
+        vmax=max_value,
+    )
+    ax_heatmap.set_ylabel(label, rotation=0, ha="right", va="center", fontsize=10)
+    ax_heatmap.set_yticks([])
+    ax_heatmap.tick_params(axis="x", bottom=False, labelbottom=False)
+
+    return ax_heatmap
+
+
+def global_vs_local(
+    token_idx,
+    token_val,
+    text_shapley_values,
+    question_tokens,
+    audio_signal,
+    audio_shapley_values,
+    sample_rate,
+    gt_start,
+    gt_end,
+    colormap="viridis",
+    figsize=(10, 8),
+    intensity_threshold=0.8,
+):
+    """
+    Plots a comparison between aggregate Shapley values (\Phi_A, \Phi_T) vs
+    single-token Shapley values (\Phi_{A,t}, \Phi_{T,t}).
+    """
+    text_max = np.max(np.abs(text_shapley_values))
+    audio_max = np.max(np.abs(audio_shapley_values))
+    max_abs_value = max(text_max, audio_max)
+
+    # Create figure
+    fig = plt.figure(figsize=figsize)
+    gs = fig.add_gridspec(4, 2, height_ratios=[2, 4, 1, 1], width_ratios=[10, 1])
+
+    text_shapley_values_local = np.abs(text_shapley_values[:, token_idx])
+    audio_shapley_values_local = np.abs(audio_shapley_values[:, token_idx])
+
+    text_shapley_values_global = np.abs(text_shapley_values).sum(axis=1)
+    audio_shapley_values_global = np.abs(audio_shapley_values).sum(axis=1)
+
+    min_shap = min(np.min(text_shapley_values_global), np.min(audio_shapley_values_global))
+    max_shap = max(np.max(text_shapley_values_global), np.max(audio_shapley_values_global))
+
+    text_max = np.max(np.abs(text_shapley_values_global))
+    audio_max = np.max(np.abs(audio_shapley_values_global))
+    max_abs_value = max(text_max, audio_max)
+
+    print(
+        f"text_max {np.max(text_shapley_values)}, text_min {np.min(text_shapley_values)}, text_median {np.median(text_shapley_values)}"
+    )
+    print(
+        f"audio_max {np.max(audio_shapley_values)}, audio_min {np.min(audio_shapley_values)}, audio_median {np.median(audio_shapley_values)}"
+    )
+    print("max_abs_value", max_abs_value)
+
+    visualize_text(
+        fig,
+        gs,
+        question_tokens,
+        text_shapley_values_global,
+        colormap=colormap,
+        intensity_threshold=intensity_threshold,
+        max_abs_value=max_abs_value,
+    )
+
+    ax_signal = add_waveform(fig, gs[1, 0], audio_signal, sample_rate, gt_start, gt_end)
+
+    ax_global = add_heatmap(
+        fig,
+        gs[2, 0],
+        audio_signal=audio_signal,
+        sample_rate=sample_rate,
+        intensity_threshold=intensity_threshold,
+        colormap=colormap,
+        audio_shapley_values=audio_shapley_values_global,
+        ax_signal=ax_signal,
+        min_value=0,
+        max_value=max_abs_value,
+        label="Abs\nGlobal",
+    )
+
+    ax_local = add_heatmap(
+        fig,
+        gs[3, 0],
+        audio_signal=audio_signal,
+        sample_rate=sample_rate,
+        intensity_threshold=intensity_threshold,
+        colormap=colormap,
+        audio_shapley_values=audio_shapley_values_local,
+        ax_signal=ax_signal,
+        min_value=0,
+        max_value=max_abs_value,
+        label=f'Abs\nt = "{token_val}"',
+    )
+
+    # Sync x-axis limits
+    total_duration = len(audio_signal) / sample_rate  # Reused for all plots
+    ax_signal.set_xlim(0, total_duration)  # Force all plots to match
+
+    # --- Colorbar ---
+    cax = fig.add_subplot(gs[1:, 1])
+    norm = mpl.colors.Normalize(vmin=0, vmax=max_abs_value)
+    sm = cm.ScalarMappable(norm=norm, cmap=colormap)
+    fig.colorbar(sm, cax=cax, label="Shapley Value")
+
+    for ax in [ax_signal, ax_local, ax_global, cax]:
+        ax.set_frame_on(False)
 
     return
