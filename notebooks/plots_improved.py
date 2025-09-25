@@ -22,7 +22,7 @@ def visualize_shapley_analysis(
     gt_start,
     gt_end,
     colormap="viridis",
-    figsize=(10, 8),
+    figsize=(5, 8),
     idx=None,
     answer_tokens=None,
     threshold=0.8,
@@ -41,7 +41,7 @@ def visualize_shapley_analysis(
 
     # Create figure
     fig = plt.figure(figsize=figsize)
-    gs = fig.add_gridspec(5, 2, height_ratios=[2, 4, 1, 1, 1], width_ratios=[10, 1])
+    gs = fig.add_gridspec(5, 2, height_ratios=[2, 1, 1, 1, 1], width_ratios=[10, 1])
 
     if idx is not None:
         text_shapley_values = text_shapley_values[:, idx]
@@ -160,7 +160,7 @@ def visualize_audio(
             alpha=0.3,
             label="Ground Truth",
         )
-        ax_signal.legend(loc="upper right")
+        ax_signal.legend(loc="upper right", bbox_to_anchor=(1,1.8))
     ax_signal.tick_params(axis="x", bottom=False, labelbottom=False)
 
     # --- Audio Shapley visualizations ---
@@ -253,8 +253,8 @@ def visualize_text(
 
     # Initial position
     x_pos = 0.0
-    y_pos = 0.98
-    line_height = 0.16  # Space between lines
+    y_pos = 0.90
+    line_height = 0.22  # Space between lines
     previous_text_obj = None  # Track the previous text object
 
     threshold = intensity_threshold * max_abs_value
@@ -262,7 +262,7 @@ def visualize_text(
 
     for t, v in zip(question_tokens, question_shapley_values):
         # leave inside the loop to restart the settings every token
-        font_settings = {"fontname": "monospace", "fontsize": 14}
+        font_settings = {"fontname": "monospace", "fontsize": 11}
 
         # Set custom properties
         intensity = abs(v)
@@ -336,7 +336,7 @@ def add_waveform(
             alpha=0.3,
             label="Ground Truth",
         )
-        ax_signal.legend(loc="upper right")
+        ax_signal.legend(loc="upper right", bbox_to_anchor=(5,5))
         ax_signal.tick_params(axis="x", bottom=False, labelbottom=False)
 
     return ax_signal
@@ -390,6 +390,10 @@ def global_vs_local(
     figsize=(10, 8),
     intensity_threshold=0.8,
 ):
+    """
+    Plots a comparison between aggregate Shapley values (\Phi_A, \Phi_T) vs
+    single-token Shapley values (\Phi_{A,t}, \Phi_{T,t}).
+    """
     text_max = np.max(np.abs(text_shapley_values))
     audio_max = np.max(np.abs(audio_shapley_values))
     max_abs_value = max(text_max, audio_max)
@@ -423,7 +427,6 @@ def global_vs_local(
         fig,
         gs,
         question_tokens,
-        # FIXME: should we use global?
         text_shapley_values_global,
         colormap=colormap,
         intensity_threshold=intensity_threshold,
@@ -460,7 +463,7 @@ def global_vs_local(
         label=f'Abs\nt = "{token_val}"',
     )
 
-    # --- Sync x-axis limits ---
+    # Sync x-axis limits
     total_duration = len(audio_signal) / sample_rate  # Reused for all plots
     ax_signal.set_xlim(0, total_duration)  # Force all plots to match
 
