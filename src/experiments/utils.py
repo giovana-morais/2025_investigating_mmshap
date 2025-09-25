@@ -1,5 +1,6 @@
 import argparse
 
+
 def parse_arguments():
     # Create the parser
     parser = argparse.ArgumentParser(description="Parse experiment settings.")
@@ -21,18 +22,24 @@ def parse_arguments():
     )
 
     parser.add_argument(
-            "--model",
-            type=str,
-            choices=["qwenaudio", "mullama"],
-            required=True
-            )
+        "--model", type=str, choices=["qwenaudio", "mullama"], required=True
+    )
 
-    parser.add_argument("--range", type=int, required=False, default=None,
-            help="Parallelization parameter. Specifies how many questions we cover per run. If not provided, we process the full json file.")
+    parser.add_argument(
+        "--range",
+        type=int,
+        required=False,
+        default=None,
+        help="Parallelization parameter. Specifies how many questions we cover per run. If not provided, we process the full json file.",
+    )
 
-    parser.add_argument("--index", type=int, required=False, default=0,
-            help="Parallelization parameter. Specifies where we start in this run. If not provided, we start by index 0.")
-
+    parser.add_argument(
+        "--index",
+        type=int,
+        required=False,
+        default=0,
+        help="Parallelization parameter. Specifies where we start in this run. If not provided, we start by index 0.",
+    )
 
     args = parser.parse_args()
 

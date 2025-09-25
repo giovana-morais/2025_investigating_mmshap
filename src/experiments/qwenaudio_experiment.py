@@ -133,14 +133,18 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
         for i in range(masked_question_tokens.shape[0]):
             # replace the question tokens for the masked ones, keep everything else
             iteration_input_id = masked_input_ids.clone().detach().to("cuda:0")
-            iteration_input_id[:, interval[0] : interval[1]] = masked_question_tokens[i, :]
+            iteration_input_id[:, interval[0] : interval[1]] = masked_question_tokens[
+                i, :
+            ]
 
             # zero the audio segments
             masked_audio = audio.clone().detach()
             to_mask = torch.where(masked_audio_token_ids[i] == 0)[0]
             for k in to_mask:
                 start = k * audio_segment_size
-                end = min((k + 1) * audio_segment_size, masked_audio.shape[0])  # ensure we don't go past the end
+                end = min(
+                    (k + 1) * audio_segment_size, masked_audio.shape[0]
+                )  # ensure we don't go past the end
                 masked_audio[start:end] = 0
 
             masked_audio_info = tokenizer.process_audio_no_url(masked_audio, audio_url)
@@ -207,8 +211,8 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
     input_ids.to("cpu")
     output_ids.to("cpu")
 
-    question_tokens, n_question_tokens, interval = tokenizer.get_number_of_question_tokens(
-        input_ids, special_tokens
+    question_tokens, n_question_tokens, interval = (
+        tokenizer.get_number_of_question_tokens(input_ids, special_tokens)
     )
     question_tokens = question_tokens.unsqueeze(0)
     audio = load_audio(audio_url, sr=SAMPLE_RATE)
@@ -230,17 +234,21 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
     shap_values = explainer(X)
     print("shap_values.shape", shap_values.shape)
 
-    outfile = os.path.join(entry["output_folder"],
-            f"{entry['question_id']}_info.npz")
+    outfile = os.path.join(entry["output_folder"], f"{entry['question_id']}_info.npz")
 
-    np.savez(outfile,
-            shapley_values=shap_values.values,
-            base_values=shap_values.base_values,
-            input_ids=X.cpu().numpy(),
-            input_tokens_str=[i.decode("utf-8") for i in
-                tokenizer.convert_ids_to_tokens(question_tokens.squeeze(0))],
-            output_tokens_str=[i.decode("utf-8") for i in
-                tokenizer.convert_ids_to_tokens(output_ids.squeeze(0))]
+    np.savez(
+        outfile,
+        shapley_values=shap_values.values,
+        base_values=shap_values.base_values,
+        input_ids=X.cpu().numpy(),
+        input_tokens_str=[
+            i.decode("utf-8")
+            for i in tokenizer.convert_ids_to_tokens(question_tokens.squeeze(0))
+        ],
+        output_tokens_str=[
+            i.decode("utf-8")
+            for i in tokenizer.convert_ids_to_tokens(output_ids.squeeze(0))
+        ],
     )
 
     return response
@@ -302,9 +310,7 @@ if __name__ == "__main__":
         audio_url = os.path.join(
             dataset_path, "/".join(entry["audio_path"].split("/")[1:])
         )
-        output_folder = os.path.join(
-            "data/output_data", experiment_type
-        )
+        output_folder = os.path.join("data/output_data", experiment_type)
         entry["output_folder"] = output_folder
         os.makedirs(output_folder, exist_ok=True)
 
@@ -312,7 +318,9 @@ if __name__ == "__main__":
             response = explain_ALM(entry, audio_url, model, tokenizer, args)
             entry["model_output"] = response
 
-            with open(os.path.join(output_folder, f"{entry['question_id']}.json"), "w") as f:
+            with open(
+                os.path.join(output_folder, f"{entry['question_id']}.json"), "w"
+            ) as f:
                 json.dump(entry, f)
         except Exception as e:
             print(f"ERROR: Could not process song {entry['audio_path']}. Reason: {e}")

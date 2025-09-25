@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def compute_mm_score(audio_length, shap_values, method="sum", verbose=False):
     """
     Compute Multimodality Score. Assumes that audio tokens are concatenated
@@ -13,15 +14,12 @@ def compute_mm_score(audio_length, shap_values, method="sum", verbose=False):
     if method == "sum":
         audio_contrib = np.abs(shap_values[0, 0, :audio_length, :]).sum()
         text_contrib = np.abs(shap_values[0, 0, audio_length:, :]).sum()
-
-        text_score = text_contrib / (text_contrib + audio_contrib)
-        audio_score = audio_contrib / (text_contrib + audio_contrib)
     elif method == "avg":
         audio_contrib = np.abs(shap_values[0, 0, :audio_length, :]).mean()
         text_contrib = np.abs(shap_values[0, 0, audio_length:, :]).mean()
 
-        text_score = text_contrib / (text_contrib + audio_contrib)
-        audio_score = audio_contrib / (text_contrib + audio_contrib)
+    text_score = text_contrib / (text_contrib + audio_contrib)
+    audio_score = audio_contrib / (text_contrib + audio_contrib)
 
     if verbose:
         print("compute_mm_score")
