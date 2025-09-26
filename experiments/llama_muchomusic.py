@@ -1,5 +1,5 @@
 """
-Llama3 inference on MuChoMusic
+Llama3 inference on MuChoMusic.
 """
 
 import argparse
