@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 
-from experiments.mmshap import compute_mm_score
+from mmshap import compute_mm_score
 
 
 # FIXME: find a better name for this function
@@ -76,7 +76,10 @@ def accuracy(df):
 
 
 
-def compute_mmshap_row(row):
+def compute_mmshap_row(row, agg_method="sum"):
+    """
+    Compute MM-SHAP value of a row
+    """
     # FIXME: change the ".." for the actual repo path
     base_folder = ".."
     file_path = os.path.join(base_folder, row.output_folder, f"{row.question_id}_info.npz")
@@ -89,7 +92,7 @@ def compute_mmshap_row(row):
 
     audio_length = row.n_audio_tokens
     audio_score, text_score = compute_mm_score(shap_values=shapley_values,
-        audio_length=audio_length, method="sum")
+        audio_length=audio_length, method=agg_method)
 
     return pd.Series({
         "a-shap": audio_score,
@@ -97,3 +100,20 @@ def compute_mmshap_row(row):
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "input_ids": input_ids})
+
+
+
+def load_shapley_values(row):
+    question_id =  row.name
+
+    data = f"../{row['output_folder']}/{question_id}_info.npz"
+    data = np.load(data)
+    tokens = row["input_ids"]
+    audio_tokens = np.where(tokens < 0)[-1]
+    question_tokens = np.where(tokens >= 0)[-1]
+
+    all_shapley_values = data["shapley_values"].squeeze(0).squeeze(0)
+    audio_shapley_values = all_shapley_values[audio_tokens]
+    question_shapley_values = all_shapley_values[question_tokens]
+
+    return all_shapley_values, audio_shapley_values, question_shapley_values
