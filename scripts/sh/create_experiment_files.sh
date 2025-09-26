@@ -1,7 +1,7 @@
 #!/bin/bash
 # this script creates the json files for the experiments
 
-base_folder="/home/gigibs/Documents/2025_investigating_mmshap"
+base_folder="/home/gigibs/Documents/research/2025_investigating_mmshap"
 base_file="$base_folder/data/input_data/muchomusic_musiccaps.json"
 output_folder="$base_folder/data/input_data"
 experiments=("few_shot" "description" "question_only" "zero_shot")
