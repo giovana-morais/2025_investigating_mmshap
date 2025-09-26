@@ -1,7 +1,7 @@
 #!/bin/bash
-# this script creates the json files for the experiments
+# this script creates the json files for all experiments
 
-base_folder="/home/gigibs/Documents/2025_investigating_mmshap"
+base_folder="/home/gigibs/Documents/research/2025_investigating_mmshap"
 base_file="$base_folder/data/input_data/muchomusic_musiccaps.json"
 output_folder="$base_folder/data/input_data"
 experiments=("few_shot" "description" "question_only" "zero_shot")
@@ -9,7 +9,7 @@ experiments=("few_shot" "description" "question_only" "zero_shot")
 for experiment in "${experiments[@]}"; do
     echo "Creating $experiment file"
 
-	python $base_folder/src/data/create_experiments_json.py \
+	python $base_folder/scripts/python/create_experiments_json.py \
         --experiment="$experiment" \
         --base_file="$base_file" \
         --output_folder="$output_folder"

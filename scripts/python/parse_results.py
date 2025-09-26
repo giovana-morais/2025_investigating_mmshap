@@ -14,6 +14,7 @@ import glob
 import os
 import json
 
+
 def combine_output(json_list):
     """
     receive a list of output .json files. load then and combine them into a single one.
@@ -26,10 +27,18 @@ def combine_output(json_list):
 
 
 if name == "__main__":
-    mullama_fs_list = glob.glob("../data/output_data/mullama_muchomusic_musiccaps_fs/*.json")
-    mullama_zs_list = glob.glob("../data/output_data/mullama_muchomusic_musiccaps_zs/*.json")
-    qwen_fs_list = glob.glob("../data/output_data/qwenaudio_muchomusic_musiccaps_fs/*.json")
-    qwen_zs_list = glob.glob("../data/output_data/qwenaudio_muchomusic_musiccaps_zs/*.json")
+    mullama_fs_list = glob.glob(
+        "../data/output_data/mullama_muchomusic_musiccaps_fs/*.json"
+    )
+    mullama_zs_list = glob.glob(
+        "../data/output_data/mullama_muchomusic_musiccaps_zs/*.json"
+    )
+    qwen_fs_list = glob.glob(
+        "../data/output_data/qwenaudio_muchomusic_musiccaps_fs/*.json"
+    )
+    qwen_zs_list = glob.glob(
+        "../data/output_data/qwenaudio_muchomusic_musiccaps_zs/*.json"
+    )
 
     qwen_fs = combine_output(qwen_fs_list)
     qwen_zs = combine_output(qwen_zs_list)
@@ -53,7 +62,9 @@ if name == "__main__":
 
     for kexp, vexp in exps_info.items():
         print(kexp, vexp)
-        output_json = combine_output(glob.glob(f"../data/output_data/{vexp['folder_name']}/*.json"))
+        output_json = combine_output(
+            glob.glob(f"../data/output_data/{vexp['folder_name']}/*.json")
+        )
 
         with open(f"../data/output_data/{kexp}.json", "w") as f:
             json.dump(output_json, f)

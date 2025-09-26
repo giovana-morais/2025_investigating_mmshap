@@ -11,7 +11,7 @@ import shap
 import torch.cuda
 
 import models.MULLaMA.MU_LLaMA.llama as llama
-import utils
+import parsing
 from models.MULLaMA.MU_LLaMA.util.misc import *
 from models.MULLaMA.MU_LLaMA.data.utils import load_and_transform_audio_data
 
@@ -171,7 +171,7 @@ def explain_ALM(
 
 
 if __name__ == "__main__":
-    args = utils.parse_arguments()
+    args = parsing.parse_arguments()
 
     if args.environment == "hpc":
         dataset_path = "/scratch/gv2167/datasets"

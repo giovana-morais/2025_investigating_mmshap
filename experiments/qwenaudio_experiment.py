@@ -25,7 +25,7 @@ from transformers import AutoModelForCausalLM
 # torch.manual_seed(1234)
 
 import models.Qwen_Audio.qwen_generation_utils as qwen_gen_utils
-import utils
+import parsing
 from models.custom_qwen_tokenizer import CustomQwenTokenizer
 from models.Qwen_Audio.audio import load_audio, SAMPLE_RATE
 
@@ -255,7 +255,7 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
 
 
 if __name__ == "__main__":
-    args = utils.parse_arguments()
+    args = parsing.parse_arguments()
 
     if args.environment == "hpc":
         dataset_path = "/scratch/gv2167/datasets"
