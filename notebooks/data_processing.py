@@ -103,12 +103,39 @@ def compute_mmshap_row(row, agg_method="sum"):
 
 
 
-def load_shapley_values(row):
-    question_id =  row.name
+def load_shapley_values(input):
+    if isinstance(input, pd.core.series.Series):
+        return _load_shapley_values_sample(input)
+    else: # isinstance(input, pd.core.frame.DataFrame):
+        try:
+            return _load_shapley_values_row(input)
+        except Exception:
+            print("format not supported:", type(input), e)
+    # else:
+    #     print("format not supported:", type(input))
 
-    data = f"../{row['output_folder']}/{question_id}_info.npz"
+
+def _load_shapley_values_row(row):
+    question_id =  row.Index
+
+    data = f"../{row.output_folder}/{question_id}_info.npz"
     data = np.load(data)
-    tokens = row["input_ids"]
+    tokens = row.input_ids
+    audio_tokens = np.where(tokens < 0)[-1]
+    question_tokens = np.where(tokens >= 0)[-1]
+
+    all_shapley_values = data["shapley_values"].squeeze(0).squeeze(0)
+    audio_shapley_values = all_shapley_values[audio_tokens]
+    question_shapley_values = all_shapley_values[question_tokens]
+    return all_shapley_values, audio_shapley_values, question_shapley_values
+
+
+def _load_shapley_values_sample(sample):
+    question_id =  sample.name
+
+    data = f"../{sample['output_folder']}/{question_id}_info.npz"
+    data = np.load(data)
+    tokens = sample["input_ids"]
     audio_tokens = np.where(tokens < 0)[-1]
     question_tokens = np.where(tokens >= 0)[-1]
 
