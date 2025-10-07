@@ -1,15 +1,14 @@
-# 2025_measuring_mmshap
 Source code for the paper "Investigating Modality Contribution in Audio LLMs for Music", currently under review.
 
 ## Getting Started
 ---
 
 This project was developed with Python 3.10. We have two requirements files, one
-for each models (they have dependencies conflict).
+for each model (they have dependency conflicts).
 
 ### Dependencies
 
-The two models we use are available on GitHub and you can download them as
+The two models we use are available on GitHub, and you can download them as
 submodules:
 
 ```bash
@@ -33,7 +32,7 @@ pip install -e .
 You can run the experiments either via `sh` or `slurm`. The scripts are in the
 folder `scripts`. All the json files for the experiments are provided in the
 `data` folder.
-This repo should be self-contained, i.e. you should not need to download
+This repo should be self-contained, i.e., you should not need to download
 any extra .csv file or things like this. Let me know if something is not
 working!
 
