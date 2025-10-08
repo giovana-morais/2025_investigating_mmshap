@@ -26,7 +26,7 @@ def combine_output(json_list):
     return data
 
 
-if name == "__main__":
+if __name__ == "__main__":
     mullama_fs_list = glob.glob(
         "../data/output_data/mullama_muchomusic_musiccaps_fs/*.json"
     )
@@ -63,8 +63,8 @@ if name == "__main__":
     for kexp, vexp in exps_info.items():
         print(kexp, vexp)
         output_json = combine_output(
-            glob.glob(f"../data/output_data/{vexp['folder_name']}/*.json")
+            glob.glob(f"../../data/output_data/{vexp['folder_name']}/*.json")
         )
 
-        with open(f"../data/output_data/{kexp}.json", "w") as f:
+        with open(f"../../data/output_data/{kexp}.json", "w") as f:
             json.dump(output_json, f)
