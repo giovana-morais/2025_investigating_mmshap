@@ -39,11 +39,15 @@ if __name__ == "__main__":
     qwen_zs_list = glob.glob(
         "../data/output_data/qwenaudio_muchomusic_musiccaps_zs/*.json"
     )
+    qwen_toy_list = glob.glob(
+        "../data/output_data/qwenaudio_toy_example/*.json"
+    )
 
     qwen_fs = combine_output(qwen_fs_list)
     qwen_zs = combine_output(qwen_zs_list)
     mu_fs = combine_output(mullama_fs_list)
     mu_zs = combine_output(mullama_zs_list)
+    qwen_toy = combine_output(qwen_toy_list)
 
     exps_info = {
         "mu_fs": {
@@ -58,6 +62,9 @@ if __name__ == "__main__":
         "qwen_zs": {
             "folder_name": "qwenaudio_muchomusic_musiccaps_zs",
         },
+        "qwen_toy": {
+            "folder_name": "qwenaudio_toy_example",
+        }
     }
 
     for kexp, vexp in exps_info.items():
