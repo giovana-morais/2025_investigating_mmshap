@@ -19,7 +19,7 @@ input_path="${base_path}/data/input_data/toy_example.json"
 
 $base_path/sing << EOF
 python \
-	$base_path/src/experiments/qwenaudio_experiment.py \
+	$base_path/experiments/qwenaudio_toy_example.py \
 	--input_path=$input_path	\
 	--model=$model 			\
 	--environment=$environment 	\
