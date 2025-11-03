@@ -1,4 +1,5 @@
-Source code for the paper "Investigating Modality Contribution in Audio LLMs for Music", currently under review.
+Source code for the paper "Investigating Modality Contribution in Audio LLMs for Music", currently under review. 
+Interactive examples can be found in the [demo page](https://giovana-morais.github.io/2025_investigating_mmshap_demo/).
 
 ## Getting Started
 ---
