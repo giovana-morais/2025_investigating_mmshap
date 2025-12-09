@@ -1,0 +1,32 @@
+[
+	{
+		"id": "OE",
+		"prompt": "Is there a thunderstorm before a siren?",
+		"dataset": "bloomberg_test",
+		"correct_answer": "yes",
+		"genre": "environmental sound",
+		"audio_path": "data/bloomberg_data/2-39945-A-19_thunderstorm_2-70052-B-42_siren_silence_0.wav",
+		"model_output": "",
+		"question_id": "OE_positive"
+	},
+	{
+		"id": "OE",
+		"prompt": "Is there a siren before a thunderstorm?",
+		"dataset": "bloomberg_test",
+		"correct_answer": "yes",
+		"genre": "environmental sound",
+		"audio_path": "data/bloomberg_data/2-39945-A-19_thunderstorm_2-70052-B-42_siren_silence_0.wav",
+		"model_output": "",
+		"question_id": "OE_negative"
+	},
+	{
+		"id": "OE",
+		"prompt": "Is there a baby laughing before a thunderstorm?",
+		"dataset": "bloomberg_test",
+		"correct_answer": "yes",
+		"genre": "environmental sound",
+		"audio_path": "data/bloomberg_data/2-39945-A-19_thunderstorm_2-70052-B-42_siren_silence_0.wav",
+		"model_output": "",
+		"question_id": "OE_negative"
+	}
+]
