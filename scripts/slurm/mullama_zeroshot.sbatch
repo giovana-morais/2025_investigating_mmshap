@@ -4,11 +4,11 @@
 #SBATCH --time=4:00:00
 #SBATCH --gres gpu:1
 #SBATCH --job-name=mullama_zs_%j
-#SBATCH --output logs/mullama_zs_%j.out
+#SBATCH --output logs/mullama_zs_20251016.out
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=gv2167@nyu.edu
 #SBATCH --account=pr_230_tandon_priority
-#SBATCH --array=0-858
+#SBATCH --array=13,22,55,133,162,411,415,473,657,711,822,845,849,851
 
 base_path="/scratch/gv2167/2025_investigating_mmshap"
 environment="hpc"
@@ -20,7 +20,7 @@ input_path="${base_path}/data/input_data/muchomusic_musiccaps_zs.json"
 
 $base_path/sing_mu << EOF
 python \
-	$base_path/src/experiments/mullama_experiment.py \
+	$base_path/experiments/mullama_experiment.py \
 	--input_path=$input_path	\
 	--model=$model 			\
 	--environment=$environment 	\
