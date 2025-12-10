@@ -1,0 +1,72 @@
+[
+	{
+		"id": "OE + TO",
+		"prompt": "Is there a thunderstorm before the siren?",
+		"dataset": "bloomberg_test",
+		"correct_answer": "yes",
+		"genre": "environmental sound",
+		"audio_path": "data/bloomberg_data/example_1.wav",
+		"model_output": "",
+		"question_id": "OE_TO_positive"
+	},
+	{
+		"id": "OE + TO",
+		"prompt": "Is there a siren before the thunderstorm?",
+		"dataset": "bloomberg_test",
+		"correct_answer": "no",
+		"genre": "environmental sound",
+		"audio_path": "data/bloomberg_data/example_2.wav",
+		"model_output": "",
+		"question_id": "OE_TO_negative"
+	},
+	{
+		"id": "OE",
+		"prompt": "Is there a cow mooing before the helicopter?",
+		"dataset": "bloomberg_test",
+		"correct_answer": "no",
+		"genre": "environmental sound",
+		"audio_path": "data/bloomberg_data/example_2.wav",
+		"model_output": "",
+		"question_id": "OE_missing"
+	},
+	{
+		"id": "OE",
+		"prompt": "What sounds are present in this audio?",
+		"dataset": "bloomberg_test",
+		"correct_answer": "no",
+		"genre": "environmental sound",
+		"audio_path": "data/bloomberg_data/example_2.wav",
+		"model_output": "",
+		"question_id": "OE_description"
+	},
+	{
+		"id": "TO",
+		"prompt": "What sounds comes after the sheep?",
+		"dataset": "bloomberg_test",
+		"correct_answer": "no",
+		"genre": "environmental sound",
+		"audio_path": "data/bloomberg_data/example_2.wav",
+		"model_output": "",
+		"question_id": "TO_first_sound"
+	},
+	{
+		"id": "TO",
+		"prompt": "What sounds comes before the helicopter?",
+		"dataset": "bloomberg_test",
+		"correct_answer": "no",
+		"genre": "environmental sound",
+		"audio_path": "data/bloomberg_data/example_2.wav",
+		"model_output": "",
+		"question_id": "TO_last_sound"
+	},
+	{
+		"id": "TO_counting",
+		"prompt": "How many repetitions does this sound make?",
+		"dataset": "bloomberg_test",
+		"correct_answer": "4",
+		"genre": "environmental sound",
+		"audio_path": "data/bloomberg_data/example_3.wav",
+		"model_output": "",
+		"question_id": "TO_counting"
+	}
+]
