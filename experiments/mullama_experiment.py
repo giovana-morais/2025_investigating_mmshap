@@ -153,7 +153,16 @@ def explain_ALM(
     X.to("cpu")
     input_ids = input_ids.to("cpu")
 
-    explainer = shap.Explainer(get_prediction, token_masker, silent=True, max_evals=800)
+    # the number of max evaluations should be at least 2*n_features. adding
+    # this to avoid problem.
+    try:
+        explainer = shap.Explainer(get_prediction, token_masker, silent=True, max_evals=800)
+    except ValueError:
+        try:
+            explainer = shap.Explainer(get_prediction, token_masker, silent=True, max_evals=900)
+        except ValueError:
+            explainer = shap.Explainer(get_prediction, token_masker, silent=True, max_evals=1000)
+
     shap_values = explainer(X)
 
     outfile = os.path.join(entry["output_folder"], f"{entry['question_id']}_info.npz")

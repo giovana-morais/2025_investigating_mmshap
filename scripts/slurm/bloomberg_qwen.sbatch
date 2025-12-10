@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -c 2
-#SBATCH --mem 96
-#SBATCH --time=4:00:00
+#SBATCH --mem 64GB
+#SBATCH --time=6:00:00
 #SBATCH --gres gpu:1
 #SBATCH --job-name=bloomberg_exps
 #SBATCH --output logs/bloomberg_epxs.out
