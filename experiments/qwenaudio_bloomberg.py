@@ -211,7 +211,9 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
     audio = torch.from_numpy(audio)
 
     # audio windows have negative token_ids to distinguish them from text tokens
-    audio_token_ids = torch.tensor(range(-1, -(n_question_tokens + 1), -1)).unsqueeze(0)
+    n_audio_tokens = audio // (SAMPLE_RATE * 0.1)
+    # we are NOT relying on text features anymore
+    audio_token_ids = torch.tensor(range(-1, -(n_audio_tokens + 1), -1)).unsqueeze(0)
     audio_token_ids = audio_token_ids.to("cuda:0")
     entry["n_question_tokens"] = n_question_tokens
     entry["n_audio_tokens"] = audio_token_ids.shape[-1]
@@ -293,9 +295,9 @@ if __name__ == "__main__":
     for entry in questions:
         kwargs = {}
 
-        audio_url = os.path.join(
-            dataset_path, "/".join(entry["audio_path"].split("/")[1:])
-        )
+        # in this, we have the data inside /data/bloomberg_data
+        audio_url = entry["audio_path"]
+
         output_folder = os.path.join("data/output_data", experiment_type)
         entry["output_folder"] = output_folder
         os.makedirs(output_folder, exist_ok=True)
