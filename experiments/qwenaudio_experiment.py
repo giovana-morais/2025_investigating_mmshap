@@ -218,8 +218,23 @@ def explain_ALM(entry, audio_url, model, tokenizer, args, **kwargs):
     audio = load_audio(audio_url, sr=SAMPLE_RATE)
     audio = torch.from_numpy(audio)
 
-    # audio windows have negative token_ids to distinguish them from text tokens
-    audio_token_ids = torch.tensor(range(-1, -(n_question_tokens + 1), -1)).unsqueeze(0)
+    if args.audio_split_category == "mc_text_tokens":
+        with open("data/output_data/qwen_fs.json", "r") as f:
+            mc_questions = json.load(f)
+
+        # this will return a list of dictionaries with size 1
+        mc_questions = mc_questions[args.range * args.index : args.range * (args.index + 1)]
+        # so we need to get the first item
+        mc_questions = mc_questions[0]
+        print("mc_questions indexed", mc_questions)
+        mc_question_tokens = int(mc_questions["n_question_tokens"])
+        print("n_question_tokens", mc_question_tokens)
+        audio_token_ids = torch.tensor(range(-1, -(mc_question_tokens + 1), -1)).unsqueeze(0)
+    else:
+
+        # audio windows have negative token_ids to distinguish them from text tokens
+        audio_token_ids = torch.tensor(range(-1, -(n_question_tokens + 1), -1)).unsqueeze(0)
+
     audio_token_ids = audio_token_ids.to("cuda:0")
     entry["n_question_tokens"] = n_question_tokens
     entry["n_audio_tokens"] = audio_token_ids.shape[-1]
@@ -300,7 +315,7 @@ if __name__ == "__main__":
     start = time.time()
 
     experiment_type = (
-        f"{args.model}_{os.path.basename(args.input_path).replace('.json', '')}"
+        f"{args.model}_{os.path.basename(args.input_path).replace('.json', '')}_{args.audio_split_category}"
     )
     print("experiment type", experiment_type)
 
@@ -314,16 +329,16 @@ if __name__ == "__main__":
         entry["output_folder"] = output_folder
         os.makedirs(output_folder, exist_ok=True)
 
-        try:
-            response = explain_ALM(entry, audio_url, model, tokenizer, args)
-            entry["model_output"] = response
+        # try:
+        response = explain_ALM(entry, audio_url, model, tokenizer, args)
+        entry["model_output"] = response
 
-            with open(
-                os.path.join(output_folder, f"{entry['question_id']}.json"), "w"
-            ) as f:
-                json.dump(entry, f)
-        except Exception as e:
-            print(f"ERROR: Could not process song {entry['audio_path']}. Reason: {e}")
+        with open(
+            os.path.join(output_folder, f"{entry['question_id']}.json"), "w"
+        ) as f:
+            json.dump(entry, f)
+        # except Exception as e:
+        #     print(f"ERROR: Could not process song {entry['audio_path']}. Reason: {e}")
 
     end = time.time()
     print(f"execution for {len(questions)}: {(end - start) / 60} minutes")

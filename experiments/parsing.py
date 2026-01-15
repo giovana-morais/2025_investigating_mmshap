@@ -41,6 +41,14 @@ def parse_arguments():
         help="Parallelization parameter. Specifies where we start in this run. If not provided, we start by index 0.",
     )
 
+    parser.add_argument(
+        "--audio_split_category",
+        type=str,
+        required=False,
+        default="n_text_tokens",
+        help="How to split the audio",
+    )
+
     args = parser.parse_args()
 
     return args
