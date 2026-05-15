@@ -42,13 +42,13 @@ working!
 ## Cite
 
 ```
-@misc{morais2025investigatingmodalitycontributionaudio,
-	title={Investigating Modality Contribution in Audio LLMs for Music},
-	author={Giovana Morais and Magdalena Fuentes},
-	year={2025},
-	eprint={2509.20641},
-	archivePrefix={arXiv},
-	primaryClass={cs.LG},
-	url={https://arxiv.org/abs/2509.20641},
-}
+@inproceedings{morais2025investigatingmodalitycontributionaudio,
+  author={Morais, Giovana and Fuentes, Magdalena},
+  booktitle={ICASSP 2026 - 2026 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)}, 
+  title={Investigating Modality Contribution in Audio LLMs for Music}, 
+  year={2026},
+  volume={},
+  number={},
+  pages={3496-3500},
+  doi={10.1109/ICASSP55912.2026.11463350}}
 ```
